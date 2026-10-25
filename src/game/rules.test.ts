@@ -12,6 +12,9 @@ import {
   sortLeaderboard,
   filterLeaderboardByClass,
   generateSpreadsheetCSV,
+  validateStudentProfile,
+  normalizeLiveLeaderboardResponse,
+  getTopLiveLeaderboard,
   QUIZ_QUESTIONS,
   SCORE_CORRECT_QUIZ,
   SCORE_COIN,
@@ -148,3 +151,34 @@ test('generateSpreadsheetCSV generates valid CSV text with headers', () => {
   assert.match(csv, /Peringkat,Nama Siswa,Kelas,Skor Akhir/);
   assert.match(csv, /"Budi","12 M1",300,"02:00",120,3,2,"2026-10-25"/);
 });
+
+test('validateStudentProfile requires both non-empty name and class', () => {
+  assert.equal(validateStudentProfile('', '12 M1').isValid, false);
+  assert.equal(validateStudentProfile('   ', '12 M1').isValid, false);
+  assert.equal(validateStudentProfile('Budi', '').isValid, false);
+  assert.equal(validateStudentProfile('Budi', '12 M2').isValid, true);
+});
+
+test('normalizeLiveLeaderboardResponse parses various object shapes and sorts top 10', () => {
+  const mockApiData = [
+    { nama: 'Budi', kelas: '12 M1', skor: 300 },
+    { Nama: 'Citra', Kelas: '12 M3', Skor: 700 },
+    { name: 'Agus', class: '12 M2', score: '550' },
+    { nama: 'Nama', kelas: 'Kelas', skor: 'Skor' }
+  ];
+
+  const normalized = normalizeLiveLeaderboardResponse(mockApiData);
+  assert.equal(normalized.length, 3);
+
+  const top10 = getTopLiveLeaderboard(normalized, 10);
+  assert.equal(top10[0].nama, 'Citra');
+  assert.equal(top10[0].skor, 700);
+  assert.equal(top10[0].rank, 1);
+  assert.equal(top10[1].nama, 'Agus');
+  assert.equal(top10[1].skor, 550);
+  assert.equal(top10[1].rank, 2);
+  assert.equal(top10[2].nama, 'Budi');
+  assert.equal(top10[2].skor, 300);
+  assert.equal(top10[2].rank, 3);
+});
+

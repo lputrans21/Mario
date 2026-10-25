@@ -292,3 +292,74 @@ export function generateSpreadsheetCSV(entries: LeaderboardEntry[]): string {
   ].join(','));
   return [headers.join(','), ...rows].join('\n');
 }
+
+export function validateStudentProfile(nama: string, kelas: string): { isValid: boolean; error?: string } {
+  const trimmedName = (nama || '').trim();
+  if (!trimmedName) {
+    return { isValid: false, error: 'Nama Lengkap Siswa wajib diisi' };
+  }
+  if (trimmedName.length < 2) {
+    return { isValid: false, error: 'Nama minimal 2 karakter' };
+  }
+  const trimmedKelas = (kelas || '').trim();
+  if (!trimmedKelas) {
+    return { isValid: false, error: 'Kelas wajib dipilih' };
+  }
+  return { isValid: true };
+}
+
+export interface LiveLeaderboardItem {
+  nama: string;
+  kelas: string;
+  skor: number;
+}
+
+export function normalizeLiveLeaderboardResponse(raw: unknown): LiveLeaderboardItem[] {
+  if (!raw) return [];
+
+  let list: unknown[] = [];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === 'object' && raw !== null) {
+    const obj = raw as Record<string, unknown>;
+    if (Array.isArray(obj.data)) list = obj.data;
+    else if (Array.isArray(obj.result)) list = obj.result;
+    else if (Array.isArray(obj.leaderboard)) list = obj.leaderboard;
+    else if (Array.isArray(obj.rows)) list = obj.rows;
+  }
+
+  const normalized: LiveLeaderboardItem[] = [];
+
+  for (const item of list) {
+    if (!item) continue;
+    if (typeof item === 'object') {
+      const rec = item as Record<string, unknown>;
+      const nama = String(rec.nama || rec.Nama || rec.name || rec.Name || '').trim();
+      const kelas = String(rec.kelas || rec.Kelas || rec.class || rec.Class || '').trim();
+      const rawSkor = rec.skor ?? rec.Skor ?? rec.score ?? rec.Score ?? 0;
+      const skor = typeof rawSkor === 'number' ? rawSkor : parseInt(String(rawSkor), 10);
+
+      // Skip header row if returned by some sheet scripts
+      if (nama.toLowerCase() === 'nama' || nama.toLowerCase() === 'name') continue;
+
+      if (nama) {
+        normalized.push({
+          nama,
+          kelas: kelas || '-',
+          skor: isNaN(skor) ? 0 : skor
+        });
+      }
+    }
+  }
+
+  return normalized;
+}
+
+export function getTopLiveLeaderboard(items: LiveLeaderboardItem[], limit = 10): Array<LiveLeaderboardItem & { rank: number }> {
+  const sorted = [...items].sort((a, b) => b.skor - a.skor);
+  return sorted.slice(0, limit).map((item, idx) => ({
+    ...item,
+    rank: idx + 1
+  }));
+}
+

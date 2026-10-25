@@ -588,11 +588,156 @@
       background: #fbbf24;
     }
 
+    .cta-btn:disabled, .cta-btn[disabled], .cta-btn.disabled {
+      background: #3e1823 !important;
+      color: #9f8a92 !important;
+      border-color: #592936 !important;
+      box-shadow: none !important;
+      cursor: not-allowed !important;
+      transform: none !important;
+      filter: grayscale(0.6);
+      opacity: 0.65;
+      pointer-events: auto;
+    }
+
     .cta-btn.secondary {
       background: rgba(60, 20, 35, 0.9);
       color: var(--gold-light);
       border-color: var(--gold-dark);
       box-shadow: none;
+    }
+
+    /* Form Validation Feedback */
+    .form-hint-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fca5a5;
+      margin-top: 6px;
+      text-align: center;
+      transition: all 0.2s ease;
+      line-height: 1.4;
+    }
+    .form-hint-text.ready {
+      color: #86efac;
+    }
+
+    /* Live Google Sheets Sync Status Card */
+    .sync-status-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(30, 15, 25, 0.9);
+      border: 1.5px solid var(--gold-dark);
+      border-radius: 12px;
+      padding: 8px 14px;
+      margin: 8px 0 10px 0;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fed7aa;
+      transition: all 0.2s ease;
+    }
+    .sync-status-card.success {
+      border-color: #22c55e;
+      background: rgba(20, 83, 45, 0.45);
+      color: #86efac;
+    }
+    .sync-status-card.error {
+      border-color: #ef4444;
+      background: rgba(127, 29, 29, 0.45);
+      color: #fca5a5;
+    }
+    .sync-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(245, 158, 11, 0.3);
+      border-top-color: var(--gold-light);
+      border-radius: 50%;
+      animation: sync-spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes sync-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Live Realtime Leaderboard Section (Top 10 from Google Sheets) */
+    .live-lb-section {
+      background: rgba(20, 8, 15, 0.88);
+      border: 1.5px solid var(--gold-dark);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      text-align: left;
+    }
+    .live-lb-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .live-lb-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--gold-light);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-refresh-live {
+      background: rgba(60, 20, 35, 0.9);
+      border: 1px solid var(--gold-dark);
+      border-radius: 8px;
+      color: #fed7aa;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-refresh-live:hover {
+      background: rgba(120, 40, 60, 0.95);
+      color: #fff;
+      border-color: var(--gold-light);
+    }
+    .live-lb-table-wrap {
+      max-height: 170px;
+      overflow-y: auto;
+      border-radius: 8px;
+      background: rgba(10, 4, 8, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .live-lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .live-lb-table th {
+      background: #250916;
+      color: var(--gold-light);
+      font-weight: 800;
+      padding: 6px 8px;
+      font-size: 11px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .live-lb-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .live-lb-table tr:hover {
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .live-lb-table tr.current-student-row {
+      background: rgba(245, 158, 11, 0.22);
+      border-left: 3px solid var(--gold-light);
+      font-weight: 800;
     }
 
     /* Stat Grid for Game Over & Victory */
@@ -830,15 +975,16 @@
         Jelajahi panggung pertunjukan megah! Ambil <strong>Pena Emas</strong>, sundul <strong>Blok Pertanyaan (?)</strong> untuk menguji pemahaman naskah & teater, dan raih posisi puncak di <strong>Leaderboard</strong>!
       </p>
 
-      <!-- Input Profil Siswa (Nama Manual & Dropdown Kelas) -->
+      <!-- Input Profil Siswa (Form Modal Bersih & Ramah HP) -->
       <div class="student-input-card">
         <div class="input-row">
-          <label for="input-student-name">Nama Lengkap Siswa:</label>
-          <input type="text" id="input-student-name" class="student-text-input" placeholder="Ketik nama lengkap siswa di sini..." maxlength="30" autocomplete="off" />
+          <label for="input-student-name">Nama Lengkap Siswa * (Wajib Diisi):</label>
+          <input type="text" id="input-student-name" class="student-text-input" placeholder="Masukkan nama lengkap siswa..." maxlength="35" autocomplete="name" required />
         </div>
         <div class="input-row">
-          <label for="select-student-class">Pilih Kelas (SMA):</label>
-          <select id="select-student-class" class="student-select">
+          <label for="select-student-class">Pilih Kelas * (Wajib Dipilih):</label>
+          <select id="select-student-class" class="student-select" required>
+            <option value="" disabled selected>-- Pilih Kelas Siswa --</option>
             <option value="12 M1">12 M1</option>
             <option value="12 M2">12 M2</option>
             <option value="12 M3">12 M3</option>
@@ -846,9 +992,12 @@
             <option value="12 M5">12 M5</option>
           </select>
         </div>
+        <div id="form-validation-msg" class="form-hint-text">
+          ⚠️ Mohon isi Nama Lengkap dan pilih Kelas untuk mengaktifkan tombol Mulai Bermain.
+        </div>
       </div>
 
-      <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
+      <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 14px;">
         <div class="stat-tile">
           <div class="stat-val">Babak I</div>
           <div class="stat-lbl">Unsur Intrinsik</div>
@@ -864,8 +1013,8 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-        <button id="btn-start-game" class="cta-btn" data-start="true">
-          <span>MULAI PEMENTASAN</span>
+        <button id="btn-start-game" class="cta-btn" disabled data-start="true">
+          <span>MULAI BERMAIN</span>
           <span>▶</span>
         </button>
 
@@ -926,12 +1075,12 @@
     <div class="modal-card">
       <div class="modal-badge" style="background: #991b1b;">⚠️ TIRAI DITUTUP</div>
       <h2 class="modal-title" style="color: #f87171;">PENTAS TERHENTI!</h2>
-      <div id="go-student-info" style="font-size: 13px; color: #fde047; margin-bottom: 6px; font-weight: 800;">Siswa: - | Kelas: -</div>
-      <p class="modal-subtitle">
+      <div id="go-student-info" style="font-size: 13px; color: #fde047; margin-bottom: 4px; font-weight: 800;">Siswa: - | Kelas: -</div>
+      <p class="modal-subtitle" style="margin-bottom: 8px;">
         Jangan berkecil hati! Memahami naskah dan pementasan drama membutuhkan latihan dan ketelitian membaca.
       </p>
 
-      <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin: 8px 0;">
         <div class="stat-tile">
           <div class="stat-val" id="go-score">0</div>
           <div class="stat-lbl">Skor Akhir</div>
@@ -950,19 +1099,44 @@
         </div>
       </div>
 
-      <div class="edu-banner">
-        💡 <strong>Tips Teater:</strong> Perhatikan konsep sutradara, amanat cerita, serta tata panggung saat menyundul Blok Pertanyaan berikutnya!
+      <!-- Indikator Loading & Sinkronisasi Otomatis Google Sheets -->
+      <div id="go-sync-card" class="sync-status-card">
+        <div class="sync-spinner"></div>
+        <span id="go-sync-text">Menyimpan skor ke Spreadsheet...</span>
       </div>
 
-      <div style="margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+      <!-- Top 10 Papan Skor Realtime (Live Spreadsheet) -->
+      <div class="live-lb-section">
+        <div class="live-lb-header">
+          <div class="live-lb-title">🏆 TOP 10 PAPAN SKOR REALTIME (SPREADSHEET)</div>
+          <button type="button" class="btn-refresh-live" id="btn-refresh-go-live" title="Segarkan Data Spreadsheet">🔄 Segarkan</button>
+        </div>
+        <div class="live-lb-table-wrap">
+          <table class="live-lb-table">
+            <thead>
+              <tr>
+                <th style="width: 44px; text-align: center;">Peringkat</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th style="text-align: right;">Skor</th>
+              </tr>
+            </thead>
+            <tbody id="go-live-lb-body">
+              <tr><td colspan="4" style="text-align: center; color: #fed7aa; padding: 10px;">⏳ Memuat papan skor realtime...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
         <button id="btn-restart-game" class="cta-btn" data-start="true">
-          <span>COBA MAIN LAGI 🔄</span>
+          <span>MAIN LAGI 🔄</span>
         </button>
-        <button id="btn-open-lb-from-go" class="cta-btn secondary">
-          <span>🏆 LEADERBOARD</span>
+        <button id="btn-open-lb-from-go" class="cta-btn secondary" style="font-size: 13px; padding: 8px 16px;">
+          <span>🏆 LEADERBOARD LENGKAP</span>
         </button>
-        <button id="btn-export-sheet-go" class="cta-btn secondary">
-          <span>📊 UNDUH SPREADSHEET</span>
+        <button id="btn-export-sheet-go" class="cta-btn secondary" style="font-size: 13px; padding: 8px 16px;">
+          <span>📊 UNDUH CSV</span>
         </button>
       </div>
     </div>
@@ -973,13 +1147,13 @@
     <div class="modal-card">
       <div class="modal-badge" style="background: #15803d; border-color: #4ade80;">🌟 APRESIASI TERTINGGI</div>
       <h2 class="modal-title" style="color: #fde047;">SELAMAT! KAMU MENJADI BINTANG TEATER!</h2>
-      <div id="vic-student-info" style="font-size: 14px; color: #fde047; margin-bottom: 4px; font-weight: 800;">Siswa: - | Kelas: -</div>
-      <div class="stars-display" id="victory-stars">⭐⭐⭐</div>
-      <p class="modal-subtitle">
-        Luar biasa! Kamu berhasil menaklukkan seluruh babak, menguasai Unsur Intrinsik, Ekstrinsik, dan Pementasan Seni Drama Teater dengan gemilang!
+      <div id="vic-student-info" style="font-size: 14px; color: #fde047; margin-bottom: 2px; font-weight: 800;">Siswa: - | Kelas: -</div>
+      <div class="stars-display" id="victory-stars" style="margin: 4px 0;">⭐⭐⭐</div>
+      <p class="modal-subtitle" style="margin-bottom: 6px;">
+        Luar biasa! Kamu berhasil menaklukkan seluruh babak dan menguasai Unsur Intrinsik, Ekstrinsik, serta Pementasan Seni Drama Teater!
       </p>
 
-      <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin: 6px 0;">
         <div class="stat-tile">
           <div class="stat-val" id="vic-score">0</div>
           <div class="stat-lbl">Total Skor</div>
@@ -998,22 +1172,44 @@
         </div>
       </div>
 
-      <div class="edu-banner">
-        📜 <strong>Ringkasan Materi yang Dikuasai:</strong><br>
-        &bull; <em>Intrinsik:</em> Tema, Tokoh/Penokohan, Alur/Plot, Amanat, Latar, Dialog.<br>
-        &bull; <em>Ekstrinsik:</em> Latar Belakang Pengarang, Nilai Moral, Nilai Budaya, Nilai Sosial.<br>
-        &bull; <em>Pementasan:</em> Sutradara, Aktor, Tata Panggung, Tata Lampu, Tata Busana, Penonton.
+      <!-- Indikator Loading & Sinkronisasi Otomatis Google Sheets -->
+      <div id="vic-sync-card" class="sync-status-card">
+        <div class="sync-spinner"></div>
+        <span id="vic-sync-text">Menyimpan skor ke Spreadsheet...</span>
       </div>
 
-      <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+      <!-- Top 10 Papan Skor Realtime (Live Spreadsheet) -->
+      <div class="live-lb-section">
+        <div class="live-lb-header">
+          <div class="live-lb-title">🏆 TOP 10 PAPAN SKOR REALTIME (SPREADSHEET)</div>
+          <button type="button" class="btn-refresh-live" id="btn-refresh-vic-live" title="Segarkan Data Spreadsheet">🔄 Segarkan</button>
+        </div>
+        <div class="live-lb-table-wrap">
+          <table class="live-lb-table">
+            <thead>
+              <tr>
+                <th style="width: 44px; text-align: center;">Peringkat</th>
+                <th>Nama Siswa</th>
+                <th>Kelas</th>
+                <th style="text-align: right;">Skor</th>
+              </tr>
+            </thead>
+            <tbody id="vic-live-lb-body">
+              <tr><td colspan="4" style="text-align: center; color: #fed7aa; padding: 10px;">⏳ Memuat papan skor realtime...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
         <button id="btn-play-again" class="cta-btn" data-start="true">
           <span>MAIN LAGI 🏆</span>
         </button>
-        <button id="btn-open-lb-from-vic" class="cta-btn secondary">
-          <span>🌟 CEK PERINGKAT SAYA</span>
+        <button id="btn-open-lb-from-vic" class="cta-btn secondary" style="font-size: 13px; padding: 8px 16px;">
+          <span>🌟 LEADERBOARD LENGKAP</span>
         </button>
-        <button id="btn-export-sheet-vic" class="cta-btn secondary">
-          <span>📥 SIMPAN & UNDUH SPREADSHEET</span>
+        <button id="btn-export-sheet-vic" class="cta-btn secondary" style="font-size: 13px; padding: 8px 16px;">
+          <span>📥 UNDUH CSV</span>
         </button>
       </div>
     </div>
@@ -2137,8 +2333,53 @@
     const modalSheetSync = document.getElementById('modal-sheet-sync');
     const hudLayer = document.getElementById('hud-layer');
 
-    // Student Profile State
-    let currentStudent = { name: '', kelas: '12 M1' };
+    // Google Apps Script Web App Integration
+    const GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbw0PgmNkpplRr3D2Lb5hrBAd2gKxJZyIVLitN6EqDV7gAJSbjjPuW1muUfsOi_Irw/exec";
+
+    // Student Profile State (Starts empty to require manual input)
+    let currentStudent = { name: '', kelas: '' };
+
+    // Realtime Form Validation for Student Name & Class Dropdown
+    function updateStudentFormValidation() {
+      const nameInput = document.getElementById('input-student-name');
+      const classSelect = document.getElementById('select-student-class');
+      const startBtn = document.getElementById('btn-start-game');
+      const hint = document.getElementById('form-validation-msg');
+
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      const classVal = classSelect ? classSelect.value : '';
+
+      const isNameValid = nameVal.length >= 2;
+      const isClassValid = classVal !== '' && classVal !== null;
+      const isValid = isNameValid && isClassValid;
+
+      if (startBtn) {
+        startBtn.disabled = !isValid;
+        if (isValid) {
+          startBtn.classList.remove('disabled');
+        } else {
+          startBtn.classList.add('disabled');
+        }
+      }
+
+      if (hint) {
+        if (isValid) {
+          hint.className = 'form-hint-text ready';
+          hint.textContent = `✅ Data lengkap! Selamat datang, ${nameVal} (${classVal}). Klik "MULAI BERMAIN" untuk berpetualang!`;
+        } else {
+          hint.className = 'form-hint-text';
+          if (!nameVal && !classVal) {
+            hint.textContent = '⚠️ Wajib isi Nama Lengkap dan pilih Kelas untuk mengaktifkan tombol Mulai Bermain.';
+          } else if (!nameVal) {
+            hint.textContent = '⚠️ Harap isi Nama Lengkap Siswa (minimal 2 karakter).';
+          } else {
+            hint.textContent = '⚠️ Harap pilih Kelas siswa pada menu dropdown.';
+          }
+        }
+      }
+
+      return isValid;
+    }
 
     // Timer State
     let timerSeconds = 0;
@@ -2254,24 +2495,191 @@
       list.push(entry);
       saveLeaderboard(list);
 
-      syncToGoogleSheet(entry);
+      // Trigger automatic sync to Google Spreadsheet Web App
+      autoSendScoreToSpreadsheet(entry.name, entry.kelas, entry.score);
       return entry;
     }
 
-    async function syncToGoogleSheet(entry) {
-      const webhookUrl = localStorage.getItem(WEBHOOK_STORAGE_KEY);
-      if (!webhookUrl || !webhookUrl.startsWith('http')) return;
+    // Set UI state for Spreadsheet Sync status card
+    function setSyncStatusUI(status, message) {
+      const cards = [document.getElementById('go-sync-card'), document.getElementById('vic-sync-card')];
+      const texts = [document.getElementById('go-sync-text'), document.getElementById('vic-sync-text')];
+
+      cards.forEach(card => {
+        if (!card) return;
+        card.className = `sync-status-card ${status}`;
+        if (status === 'loading') {
+          card.innerHTML = `<div class="sync-spinner"></div><span>${escapeHtml(message)}</span>`;
+        } else if (status === 'success') {
+          card.innerHTML = `<span>✅ ${escapeHtml(message)}</span>`;
+        } else {
+          card.innerHTML = `<span>⚠️ ${escapeHtml(message)}</span>`;
+        }
+      });
+    }
+
+    // Automatic HTTP POST to Google Sheets Web App
+    async function autoSendScoreToSpreadsheet(nama, kelas, skor) {
+      setSyncStatusUI('loading', 'Menyimpan skor ke Spreadsheet...');
+
+      const payload = {
+        nama: nama || 'Siswa',
+        kelas: kelas || '12 M1',
+        skor: skor || 0
+      };
+
+      const jsonString = JSON.stringify(payload);
+      let success = false;
 
       try {
-        await fetch(webhookUrl, {
+        // Mode 'no-cors' and 'text/plain' ensures Google Apps Script receives the payload cleanly
+        // without browser preflight CORS blocking
+        await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entry)
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: jsonString
         });
-      } catch (e) {
-        console.warn('Google Sheet Sync error:', e);
+        success = true;
+      } catch (err) {
+        console.warn('POST via fetch encountered an issue:', err);
+        if (navigator.sendBeacon) {
+          success = navigator.sendBeacon(GOOGLE_SHEETS_WEBAPP_URL, jsonString);
+        }
       }
+
+      if (success) {
+        setSyncStatusUI('success', 'Skor berhasil tersimpan ke Spreadsheet!');
+      } else {
+        setSyncStatusUI('error', 'Koneksi online terhambat. Skor tersimpan di sesi lokal.');
+      }
+
+      // Immediately fetch and render updated Top 10 Live Leaderboard from Google Sheets!
+      await fetchAndRenderLiveLeaderboard();
+    }
+
+    // Normalizes raw data from Google Sheets GET endpoint
+    function normalizeSheetLeaderboard(raw) {
+      if (!raw) return [];
+      let list = [];
+      if (Array.isArray(raw)) {
+        list = raw;
+      } else if (typeof raw === 'object' && raw !== null) {
+        if (Array.isArray(raw.data)) list = raw.data;
+        else if (Array.isArray(raw.result)) list = raw.result;
+        else if (Array.isArray(raw.leaderboard)) list = raw.leaderboard;
+        else if (Array.isArray(raw.rows)) list = raw.rows;
+      }
+
+      const normalized = [];
+      for (const item of list) {
+        if (!item) continue;
+        if (typeof item === 'object') {
+          const rec = item;
+          const nama = String(rec.nama || rec.Nama || rec.name || rec.Name || '').trim();
+          const kelas = String(rec.kelas || rec.Kelas || rec.class || rec.Class || '').trim();
+          const rawSkor = rec.skor ?? rec.Skor ?? rec.score ?? rec.Score ?? 0;
+          const skor = typeof rawSkor === 'number' ? rawSkor : parseInt(String(rawSkor), 10);
+
+          if (nama.toLowerCase() === 'nama' || nama.toLowerCase() === 'name') continue;
+          if (nama) {
+            normalized.push({
+              nama,
+              kelas: kelas || '-',
+              skor: isNaN(skor) ? 0 : skor
+            });
+          }
+        }
+      }
+      return normalized;
+    }
+
+    // Fetch Top 10 Live Leaderboard via HTTP GET
+    async function fetchAndRenderLiveLeaderboard() {
+      const bodies = [document.getElementById('go-live-lb-body'), document.getElementById('vic-live-lb-body')];
+      bodies.forEach(b => {
+        if (b) {
+          b.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #fed7aa; padding: 12px;"><div class="sync-spinner" style="display:inline-block; margin-right:8px; vertical-align:middle;"></div> Memuat papan skor realtime...</td></tr>`;
+        }
+      });
+
+      let remoteEntries = [];
+      try {
+        const response = await fetch(GOOGLE_SHEETS_WEBAPP_URL, {
+          method: 'GET',
+          cache: 'no-store'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          remoteEntries = normalizeSheetLeaderboard(data);
+        }
+      } catch (err) {
+        console.warn('Gagal fetch GET live leaderboard dari Google Sheets:', err);
+      }
+
+      // Merge remote entries with local leaderboard and current student run
+      const combinedMap = new Map();
+
+      // Seed & local entries
+      getLeaderboard().forEach(item => {
+        const key = `${item.name.toLowerCase()}_${(item.kelas || '').toLowerCase()}`;
+        combinedMap.set(key, { nama: item.name, kelas: item.kelas, skor: item.score });
+      });
+
+      // Remote entries from Spreadsheet take precedence
+      remoteEntries.forEach(item => {
+        const key = `${item.nama.toLowerCase()}_${(item.kelas || '').toLowerCase()}`;
+        combinedMap.set(key, { nama: item.nama, kelas: item.kelas, skor: item.skor });
+      });
+
+      // Include current student's latest score
+      const scene = getGameScene();
+      const currentScore = scene ? scene.score : 0;
+      if (currentStudent.name) {
+        const key = `${currentStudent.name.toLowerCase()}_${(currentStudent.kelas || '').toLowerCase()}`;
+        const existing = combinedMap.get(key);
+        if (!existing || currentScore >= existing.skor) {
+          combinedMap.set(key, { nama: currentStudent.name, kelas: currentStudent.kelas, skor: currentScore, isCurrentStudent: true });
+        }
+      }
+
+      const allItems = Array.from(combinedMap.values());
+      allItems.sort((a, b) => b.skor - a.skor);
+      const top10 = allItems.slice(0, 10);
+
+      const rankIcons = ['🥇', '🥈', '🥉'];
+      let htmlRows = '';
+
+      if (top10.length === 0) {
+        htmlRows = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 12px;">Belum ada skor yang tercatat di Spreadsheet.</td></tr>`;
+      } else {
+        top10.forEach((item, idx) => {
+          const rankDisplay = idx < 3 ? rankIcons[idx] : `#${idx + 1}`;
+          const isCurrent = (item.nama.toLowerCase() === (currentStudent.name || '').toLowerCase()) &&
+                            (!currentStudent.kelas || item.kelas.toLowerCase() === currentStudent.kelas.toLowerCase());
+          const trClass = isCurrent ? 'current-student-row' : '';
+
+          htmlRows += `
+            <tr class="${trClass}">
+              <td style="text-align: center; font-weight: 900; font-size: 13px;">${rankDisplay}</td>
+              <td>
+                <div style="font-weight: 800; color: ${isCurrent ? '#fde047' : '#fff'};">
+                  ${escapeHtml(item.nama)}
+                  ${isCurrent ? '<span style="font-size: 9px; background: #b45309; color: #fff; padding: 1px 6px; border-radius: 999px; margin-left: 4px; font-weight: 900;">KAMU</span>' : ''}
+                </div>
+              </td>
+              <td><span class="badge-class" style="font-size: 10px; padding: 2px 6px;">${escapeHtml(item.kelas)}</span></td>
+              <td style="text-align: right; color: var(--gold-light); font-weight: 900; font-size: 13px; font-variant-numeric: tabular-nums;">${item.skor}</td>
+            </tr>
+          `;
+        });
+      }
+
+      bodies.forEach(b => {
+        if (b) b.innerHTML = htmlRows;
+      });
     }
 
     function downloadSpreadsheetCSV() {
@@ -2379,21 +2787,27 @@
     }
 
     function startGame() {
+      const isValid = updateStudentFormValidation();
       const nameInput = document.getElementById('input-student-name');
-      const nameVal = nameInput ? nameInput.value.trim() : '';
       const classSelect = document.getElementById('select-student-class');
-      const classVal = classSelect ? classSelect.value : '12 M1';
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      const classVal = classSelect ? classSelect.value : '';
 
-      if (!nameVal) {
-        if (nameInput) {
+      if (!isValid || !nameVal || !classVal) {
+        if (!nameVal && nameInput) {
           nameInput.classList.add('input-error');
           nameInput.focus();
+        } else if (!classVal && classSelect) {
+          classSelect.classList.add('input-error');
+          classSelect.focus();
         }
-        alertFeedbackBanner('⚠️ Mohon isi Nama Lengkap Siswa terlebih dahulu!');
+        alertFeedbackBanner('⚠️ Mohon isi Nama Lengkap dan pilih Kelas siswa terlebih dahulu!');
         return;
       }
 
       if (nameInput) nameInput.classList.remove('input-error');
+      if (classSelect) classSelect.classList.remove('input-error');
+
       currentStudent = { name: nameVal, kelas: classVal };
 
       // Update student tag in HUD
@@ -2406,6 +2820,43 @@
       modalPause.style.display = 'none';
       modalLeaderboard.style.display = 'none';
       modalSheetSync.style.display = 'none';
+      hudLayer.style.display = 'block';
+
+      soundSys.init();
+      soundSys.startBgm();
+      startTimer();
+
+      const scene = getGameScene();
+      if (scene) {
+        scene.currentLevel = 1;
+        scene.score = 0;
+        scene.coins = 0;
+        scene.lives = 3;
+        scene.correctCount = 0;
+        scene.isMaskActive = false;
+        scene.isHurt = false;
+        scene.scene.resume();
+        scene.scene.restart();
+      }
+    }
+
+    function restartGameSession() {
+      // Re-use current student profile or prompt if empty
+      if (!currentStudent.name || !currentStudent.kelas) {
+        document.body.dataset.state = 'title';
+        modalTitle.style.display = 'flex';
+        modalGameOver.style.display = 'none';
+        modalVictory.style.display = 'none';
+        hudLayer.style.display = 'none';
+        updateStudentFormValidation();
+        return;
+      }
+
+      document.body.dataset.state = 'playing';
+      modalGameOver.style.display = 'none';
+      modalVictory.style.display = 'none';
+      modalPause.style.display = 'none';
+      modalQuiz.style.display = 'none';
       hudLayer.style.display = 'block';
 
       soundSys.init();
@@ -2605,11 +3056,29 @@
 
     // Attach Event Listeners to Buttons
     document.getElementById('btn-start-game').addEventListener('click', startGame);
-    document.getElementById('btn-restart-game').addEventListener('click', startGame);
-    document.getElementById('btn-play-again').addEventListener('click', startGame);
+    document.getElementById('btn-restart-game').addEventListener('click', restartGameSession);
+    document.getElementById('btn-play-again').addEventListener('click', restartGameSession);
     document.getElementById('btn-pause').addEventListener('click', togglePause);
     document.getElementById('btn-mute').addEventListener('click', toggleMute);
     document.getElementById('btn-resume-game').addEventListener('click', togglePause);
+
+    // Form Input Validation Event Listeners
+    const nameInputEl = document.getElementById('input-student-name');
+    const classSelectEl = document.getElementById('select-student-class');
+    if (nameInputEl) {
+      nameInputEl.addEventListener('input', updateStudentFormValidation);
+      nameInputEl.addEventListener('change', updateStudentFormValidation);
+      nameInputEl.addEventListener('keyup', updateStudentFormValidation);
+    }
+    if (classSelectEl) {
+      classSelectEl.addEventListener('change', updateStudentFormValidation);
+    }
+
+    // Refresh Live Leaderboard Buttons
+    const refreshGoBtn = document.getElementById('btn-refresh-go-live');
+    if (refreshGoBtn) refreshGoBtn.addEventListener('click', fetchAndRenderLiveLeaderboard);
+    const refreshVicBtn = document.getElementById('btn-refresh-vic-live');
+    if (refreshVicBtn) refreshVicBtn.addEventListener('click', fetchAndRenderLiveLeaderboard);
 
     // Leaderboard Openers
     document.getElementById('btn-open-leaderboard').addEventListener('click', () => openLeaderboardModal('Semua'));
@@ -2664,7 +3133,11 @@
       hudLayer.style.display = 'none';
       soundSys.stopBgm();
       stopTimer();
+      updateStudentFormValidation();
     });
+
+    // Initialize Form Validation State on page load
+    updateStudentFormValidation();
 
     // Touch Controls Wiring
     function bindTouchButton(elementId, onActive, onInactive) {
