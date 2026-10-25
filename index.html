@@ -1,0 +1,2731 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Petualangan Bintang Teater - Game Platformer 2D</title>
+  <meta name="description" content="Game platformer 2D edukatif ala Super Mario untuk belajar materi drama Bahasa Indonesia: unsur intrinsik, ekstrinsik, dan pementasan teater dengan kontrol sentuh mobile." />
+  <meta property="og:title" content="Petualangan Bintang Teater - Game Platformer 2D" />
+  <meta property="og:description" content="Game platformer 2D edukatif ala Super Mario untuk belajar materi drama Bahasa Indonesia: unsur intrinsik, ekstrinsik, dan pementasan teater dengan kontrol sentuh mobile." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts for crisp retro/theatrical typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Phaser 3 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.88.2/dist/phaser.min.js"></script>
+
+  <style>
+    :root {
+      --gold-primary: #f59e0b;
+      --gold-light: #fbbf24;
+      --gold-dark: #b45309;
+      --theater-red: #881337;
+      --theater-crimson: #be123c;
+      --curtain-shadow: #4c0519;
+      --stage-wood: #78350f;
+      --stage-wood-dark: #451a03;
+      --ui-bg: rgba(23, 10, 16, 0.94);
+      --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-pixel: 'Press Start 2P', monospace;
+      --font-dramatic: 'Cinzel', serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      margin: 0;
+      padding: 0;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0c0408;
+      font-family: var(--font-body);
+      color: #fff;
+    }
+
+    #game-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      z-index: 1;
+    }
+
+    /* Ambient Theater Curtains on edge of viewport */
+    .viewport-curtain-left, .viewport-curtain-right {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      pointer-events: none;
+      z-index: 10;
+      background: linear-gradient(90deg, #4c0519, #be123c 40%, #881337 70%, transparent);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    }
+    .viewport-curtain-right {
+      right: 0;
+      transform: scaleX(-1);
+    }
+
+    /* HUD Layer */
+    #hud-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+      display: none;
+    }
+
+    .hud-top-bar {
+      position: absolute;
+      top: 8px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 10, 20, 0.85);
+      border: 2px solid var(--gold-dark);
+      border-radius: 999px;
+      padding: 4px 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      pointer-events: auto;
+    }
+
+    .hud-level-tag {
+      font-family: var(--font-dramatic);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: 0.5px;
+    }
+
+    .hud-stat {
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hud-lives {
+      display: flex;
+      gap: 3px;
+    }
+
+    .heart-icon {
+      font-size: 16px;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.7));
+      transition: transform 0.2s ease;
+    }
+
+    .heart-icon.lost {
+      filter: grayscale(1) opacity(0.35);
+      transform: scale(0.85);
+    }
+
+    .hud-mask-indicator {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      animation: pulseGlow 0.8s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      from { transform: scale(0.96); box-shadow: 0 0 4px #fbbf24; }
+      to { transform: scale(1.04); box-shadow: 0 0 12px #fbbf24; }
+    }
+
+    .hud-btn-group {
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+    }
+
+    .hud-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(40, 15, 25, 0.9);
+      border: 2px solid var(--gold-dark);
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      transition: all 0.15s ease;
+    }
+    .hud-btn:active {
+      transform: scale(0.9);
+      background: var(--gold-primary);
+      color: #000;
+    }
+
+    /* Mobile Virtual Controls */
+    #virtual-controls {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      pointer-events: none;
+      z-index: 25;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    body[data-state="playing"] #virtual-controls {
+      display: flex;
+    }
+
+    .dpad-container {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .ctrl-btn {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #3f1525 0%, #1a0810 100%);
+      border: 3px solid var(--gold-light);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.08s ease;
+      touch-action: none;
+    }
+
+    .ctrl-btn:active, .ctrl-btn.active {
+      transform: scale(0.92);
+      background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold-dark) 100%);
+      color: #1a0810;
+      border-color: #fff;
+      box-shadow: 0 2px 6px rgba(245,158,11,0.5);
+    }
+
+    .jump-btn-wrap {
+      pointer-events: auto;
+    }
+
+    .jump-btn {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #facc15 0%, #d97706 100%);
+      border: 4px solid #fff;
+      color: #451a03;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      box-shadow: 0 10px 20px rgba(217, 119, 6, 0.6), inset 0 3px 6px rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+      touch-action: none;
+    }
+
+    .jump-btn span.icon {
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .jump-btn:active, .jump-btn.active {
+      transform: scale(0.91);
+      background: linear-gradient(180deg, #fef08a 0%, #b45309 100%);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+    }
+
+    /* Modal Screens Overlay (Title, Quiz, Game Over, Victory, Pause) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 4, 8, 0.88);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .modal-card {
+      background: linear-gradient(180deg, #2a0b18 0%, #15050c 100%);
+      border: 3px solid var(--gold-primary);
+      border-radius: 20px;
+      padding: 24px 22px;
+      max-width: 580px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 25px rgba(245, 158, 11, 0.25);
+      text-align: center;
+      position: relative;
+    }
+
+    .modal-card::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 16px;
+      pointer-events: none;
+    }
+
+    .modal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--theater-crimson);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+      border: 1px solid var(--gold-light);
+    }
+
+    .modal-title {
+      font-family: var(--font-dramatic);
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+
+    .modal-subtitle {
+      font-size: 14px;
+      color: #fed7aa;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    /* Quiz Option Buttons */
+    .quiz-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0;
+      text-align: left;
+    }
+
+    .quiz-option-btn {
+      background: rgba(60, 20, 35, 0.85);
+      border: 2px solid rgba(245, 158, 11, 0.5);
+      border-radius: 14px;
+      padding: 12px 16px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .quiz-option-btn:hover {
+      background: rgba(90, 30, 50, 0.95);
+      border-color: var(--gold-light);
+    }
+
+    .quiz-option-btn:active {
+      transform: scale(0.98);
+      background: var(--gold-primary);
+      color: #000;
+    }
+
+    .quiz-option-letter {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gold-primary);
+      color: #1a0810;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Student Profile Input Card on Title Screen */
+    .student-input-card {
+      background: rgba(30, 10, 20, 0.75);
+      border: 2px solid var(--gold-dark);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin: 12px 0 16px 0;
+      text-align: left;
+    }
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .input-row:last-child {
+      margin-bottom: 0;
+    }
+    .input-row label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .student-text-input {
+      background: rgba(15, 5, 10, 0.9);
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.15s ease;
+      width: 100%;
+    }
+    .student-text-input:focus {
+      border-color: var(--gold-light);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+    .student-text-input.input-error {
+      border-color: #ef4444;
+      background: rgba(127, 29, 29, 0.25);
+    }
+    .student-select {
+      background: #1a0812;
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fed7aa;
+      font-size: 14px;
+      font-family: var(--font-body);
+      font-weight: 800;
+      outline: none;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Leaderboard Modal & Table */
+    .leaderboard-tabs {
+      display: flex;
+      gap: 6px;
+      margin: 10px 0 12px 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .lb-tab-btn {
+      background: rgba(40, 15, 25, 0.9);
+      border: 1.5px solid var(--gold-dark);
+      border-radius: 999px;
+      padding: 4px 12px;
+      color: #fed7aa;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .lb-tab-btn.active, .lb-tab-btn:hover {
+      background: var(--gold-primary);
+      color: #1a0810;
+      border-color: #fff;
+    }
+    .leaderboard-table-container {
+      max-height: 220px;
+      overflow-y: auto;
+      border-radius: 12px;
+      background: rgba(15, 5, 10, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      margin-bottom: 12px;
+    }
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+    .lb-table th {
+      background: rgba(60, 20, 35, 0.95);
+      color: var(--gold-light);
+      padding: 8px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 900;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .lb-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+      font-weight: 700;
+    }
+    .lb-table tr.current-run {
+      background: rgba(245, 158, 11, 0.25);
+      border-left: 3px solid var(--gold-light);
+    }
+    .lb-rank {
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .badge-class {
+      display: inline-block;
+      background: rgba(180, 83, 9, 0.3);
+      border: 1px solid var(--gold-dark);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #fef08a;
+    }
+
+    /* Feedback Box */
+    .feedback-box {
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .feedback-box.correct {
+      background: rgba(22, 101, 52, 0.35);
+      border: 2px solid #22c55e;
+      color: #bbf7d0;
+    }
+
+    .feedback-box.wrong {
+      background: rgba(153, 27, 27, 0.35);
+      border: 2px solid #ef4444;
+      color: #fecaca;
+    }
+
+    .feedback-title {
+      font-weight: 900;
+      font-size: 16px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Action Buttons (Start, Next, Restart) */
+    .cta-btn {
+      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+      color: #2b0e04;
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 900;
+      padding: 12px 28px;
+      border: 2px solid #fff;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .cta-btn:active {
+      transform: scale(0.95);
+      background: #fbbf24;
+    }
+
+    .cta-btn.secondary {
+      background: rgba(60, 20, 35, 0.9);
+      color: var(--gold-light);
+      border-color: var(--gold-dark);
+      box-shadow: none;
+    }
+
+    /* Stat Grid for Game Over & Victory */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .stat-tile {
+      background: rgba(30, 10, 20, 0.8);
+      border: 1px solid var(--gold-dark);
+      border-radius: 12px;
+      padding: 10px 8px;
+    }
+
+    .stat-val {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--gold-light);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #fed7aa;
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    .stars-display {
+      font-size: 32px;
+      margin: 10px 0;
+      letter-spacing: 4px;
+    }
+
+    .controls-hint-bar {
+      margin-top: 18px;
+      font-size: 12px;
+      color: #fb923c;
+      opacity: 0.9;
+    }
+
+    /* Floating educational tip banner */
+    .edu-banner {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px dashed var(--gold-light);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #fed7aa;
+      margin-top: 14px;
+      text-align: left;
+    }
+
+    /* Touch screen and mobile landscape optimizations */
+    @media (max-width: 640px) {
+      .modal-card {
+        padding: 16px 14px;
+      }
+      .modal-title {
+        font-size: 19px;
+      }
+      .quiz-option-btn {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      .ctrl-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 22px;
+      }
+      .jump-btn {
+        width: 72px;
+        height: 72px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-height: 520px) {
+      .modal-overlay {
+        padding: 8px;
+      }
+      .modal-card {
+        padding: 10px 16px;
+        max-height: 96vh;
+        overflow-y: auto;
+      }
+      .modal-title {
+        font-size: 16px !important;
+        margin-bottom: 4px !important;
+      }
+      .modal-subtitle {
+        font-size: 12px !important;
+        margin-bottom: 8px !important;
+        line-height: 1.3 !important;
+      }
+      .modal-badge {
+        font-size: 10px;
+        padding: 2px 10px;
+        margin-bottom: 6px;
+      }
+      .stat-grid {
+        margin: 6px 0 !important;
+        gap: 6px !important;
+      }
+      .stat-tile {
+        padding: 5px 4px !important;
+      }
+      .stat-val {
+        font-size: 16px !important;
+      }
+      .stat-lbl {
+        font-size: 9px !important;
+      }
+      .stars-display {
+        font-size: 22px !important;
+        margin: 2px 0 !important;
+      }
+      .edu-banner {
+        font-size: 11px;
+        padding: 6px 10px;
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+      .quiz-options-list {
+        gap: 6px !important;
+        margin: 6px 0 !important;
+      }
+      .quiz-option-btn {
+        padding: 7px 12px !important;
+        font-size: 13px !important;
+        border-radius: 10px !important;
+      }
+      .quiz-option-letter {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 12px !important;
+      }
+      .feedback-box {
+        padding: 8px 12px !important;
+        margin: 6px 0 !important;
+        font-size: 12px !important;
+      }
+      .cta-btn {
+        padding: 8px 22px !important;
+        font-size: 13px !important;
+      }
+      .controls-hint-bar {
+        margin-top: 6px !important;
+        font-size: 10px !important;
+      }
+    }
+  </style>
+</head>
+<body data-state="title">
+
+  <!-- Left and right decorative stage curtains -->
+  <div class="viewport-curtain-left"></div>
+  <div class="viewport-curtain-right"></div>
+
+  <!-- Phaser Game Canvas Mount Target -->
+  <div id="game-container"></div>
+
+  <!-- HUD Overlay (Visible during 'playing') -->
+  <div id="hud-layer">
+    <div class="hud-top-bar">
+      <!-- Left: Level, Student Profile, and Live Timer -->
+      <div class="hud-cluster" style="gap: 6px;">
+        <span class="hud-level-tag" id="hud-level-label">BABAK I: INTRINSIK</span>
+        <div style="width: 1px; height: 14px; background: rgba(245, 158, 11, 0.4);"></div>
+        <span id="hud-student-tag" style="font-size: 11px; font-weight: 800; color: #fde047;">👤 Siswa (12 M1)</span>
+        <div style="width: 1px; height: 14px; background: rgba(245, 158, 11, 0.4);"></div>
+        <span id="hud-timer" style="font-size: 12px; font-weight: 800; color: #a7f3d0; font-variant-numeric: tabular-nums;">⏱️ 00:00</span>
+      </div>
+
+      <!-- Center: Score & Gold Quills -->
+      <div class="hud-cluster">
+        <div class="hud-stat">
+          <span>🏆</span>
+          <span id="hud-score">0</span>
+        </div>
+        <div style="width: 1px; height: 16px; background: rgba(245, 158, 11, 0.4);"></div>
+        <div class="hud-stat">
+          <span>🪶</span>
+          <span id="hud-coins">0</span>
+        </div>
+      </div>
+
+      <!-- Right: Lives & Mask & Controls -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div id="hud-mask-indicator" class="hud-mask-indicator">
+          <span>🎭 TOPENG AKTIF</span>
+        </div>
+
+        <div class="hud-cluster">
+          <div class="hud-lives" id="hud-lives">
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+          </div>
+        </div>
+
+        <div class="hud-btn-group">
+          <button id="btn-hud-leaderboard" class="hud-btn" title="Papan Peringkat / Leaderboard" aria-label="Papan Peringkat">🏆</button>
+          <button id="btn-mute" class="hud-btn" title="Suara / Mute [M]" aria-label="Toggle Sound">🔊</button>
+          <button id="btn-pause" class="hud-btn" title="Jeda [P / Esc]" aria-label="Pause Game">⏸️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Virtual Controls (On-Screen D-Pad & Jump) -->
+  <div id="virtual-controls">
+    <div class="dpad-container">
+      <button id="vbtn-left" class="ctrl-btn" aria-label="Gerak Kiri">◀</button>
+      <button id="vbtn-right" class="ctrl-btn" aria-label="Gerak Kanan">▶</button>
+    </div>
+    <div class="jump-btn-wrap">
+      <button id="vbtn-jump" class="jump-btn" aria-label="Lompat">
+        <span class="icon">🦘</span>
+        <span>LOMPAT</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 1: Title Screen -->
+  <div id="modal-title" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-badge">🎭 EDUTAINMENT BAHASA INDONESIA</div>
+      <h1 class="modal-title">PETUALANGAN BINTANG TEATER</h1>
+      <p class="modal-subtitle">
+        Jelajahi panggung pertunjukan megah! Ambil <strong>Pena Emas</strong>, sundul <strong>Blok Pertanyaan (?)</strong> untuk menguji pemahaman naskah & teater, dan raih posisi puncak di <strong>Leaderboard</strong>!
+      </p>
+
+      <!-- Input Profil Siswa (Nama Manual & Dropdown Kelas) -->
+      <div class="student-input-card">
+        <div class="input-row">
+          <label for="input-student-name">Nama Lengkap Siswa:</label>
+          <input type="text" id="input-student-name" class="student-text-input" placeholder="Ketik nama lengkap siswa di sini..." maxlength="30" autocomplete="off" />
+        </div>
+        <div class="input-row">
+          <label for="select-student-class">Pilih Kelas (SMA):</label>
+          <select id="select-student-class" class="student-select">
+            <option value="12 M1">12 M1</option>
+            <option value="12 M2">12 M2</option>
+            <option value="12 M3">12 M3</option>
+            <option value="12 M4">12 M4</option>
+            <option value="12 M5">12 M5</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 16px;">
+        <div class="stat-tile">
+          <div class="stat-val">Babak I</div>
+          <div class="stat-lbl">Unsur Intrinsik</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val">Babak II</div>
+          <div class="stat-lbl">Unsur Ekstrinsik</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val">Babak III</div>
+          <div class="stat-lbl">Pementasan Teater</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+        <button id="btn-start-game" class="cta-btn" data-start="true">
+          <span>MULAI PEMENTASAN</span>
+          <span>▶</span>
+        </button>
+
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 4px;">
+          <button id="btn-open-leaderboard" class="cta-btn secondary" style="padding: 7px 16px; font-size: 12px;">
+            <span>🏆 LIHAT LEADERBOARD</span>
+          </button>
+          <button id="btn-export-sheet-title" class="cta-btn secondary" style="padding: 7px 16px; font-size: 12px;">
+            <span>📊 UNDUH SPREADSHEET</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="controls-hint-bar">
+        📱 HP Android: Gunakan Tombol Sentuh di Layar &nbsp;|&nbsp; 💻 Keyboard: A/D/Panah Gerak · Spasi/W Lompat · P Jeda
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Interactive Question / Quiz Dialog -->
+  <div id="modal-quiz" class="modal-overlay" style="display: none;" role="dialog" aria-labelledby="quiz-question-text">
+    <div class="modal-card">
+      <div class="modal-badge" id="quiz-category-badge">🎭 UNSUR INTRINSIK DRAMA</div>
+      <h2 class="modal-title" style="font-size: 19px; color: #fff; margin-bottom: 14px;" id="quiz-question-text">
+        Pertanyaan drama akan tampil di sini...
+      </h2>
+
+      <!-- 3 Multiple Choice Options -->
+      <div class="quiz-options-list" id="quiz-options-container">
+        <button class="quiz-option-btn" data-opt="0">
+          <span class="quiz-option-letter">A</span>
+          <span class="quiz-option-text">Pilihan A</span>
+        </button>
+        <button class="quiz-option-btn" data-opt="1">
+          <span class="quiz-option-letter">B</span>
+          <span class="quiz-option-text">Pilihan B</span>
+        </button>
+        <button class="quiz-option-btn" data-opt="2">
+          <span class="quiz-option-letter">C</span>
+          <span class="quiz-option-text">Pilihan C</span>
+        </button>
+      </div>
+
+      <!-- Feedback Box (Shows after answering) -->
+      <div id="quiz-feedback-box" class="feedback-box">
+        <div class="feedback-title" id="quiz-feedback-title">✅ BENAR SEKALI!</div>
+        <div id="quiz-feedback-desc">Penjelasan materi...</div>
+      </div>
+
+      <button id="btn-quiz-continue" class="cta-btn" style="display: none; width: 100%; margin-top: 10px;">
+        LANJUTKAN PENTAS ▶
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 3: Game Over Screen -->
+  <div id="modal-gameover" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-badge" style="background: #991b1b;">⚠️ TIRAI DITUTUP</div>
+      <h2 class="modal-title" style="color: #f87171;">PENTAS TERHENTI!</h2>
+      <div id="go-student-info" style="font-size: 13px; color: #fde047; margin-bottom: 6px; font-weight: 800;">Siswa: - | Kelas: -</div>
+      <p class="modal-subtitle">
+        Jangan berkecil hati! Memahami naskah dan pementasan drama membutuhkan latihan dan ketelitian membaca.
+      </p>
+
+      <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-tile">
+          <div class="stat-val" id="go-score">0</div>
+          <div class="stat-lbl">Skor Akhir</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val" id="go-time">00:00</div>
+          <div class="stat-lbl">Waktu</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val" id="go-level">Babak 1</div>
+          <div class="stat-lbl">Tercapai</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val" id="go-coins">0</div>
+          <div class="stat-lbl">Pena Emas</div>
+        </div>
+      </div>
+
+      <div class="edu-banner">
+        💡 <strong>Tips Teater:</strong> Perhatikan konsep sutradara, amanat cerita, serta tata panggung saat menyundul Blok Pertanyaan berikutnya!
+      </div>
+
+      <div style="margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-restart-game" class="cta-btn" data-start="true">
+          <span>COBA MAIN LAGI 🔄</span>
+        </button>
+        <button id="btn-open-lb-from-go" class="cta-btn secondary">
+          <span>🏆 LEADERBOARD</span>
+        </button>
+        <button id="btn-export-sheet-go" class="cta-btn secondary">
+          <span>📊 UNDUH SPREADSHEET</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Victory Screen (Selamat! Kamu Menjadi Bintang Teater) -->
+  <div id="modal-victory" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-badge" style="background: #15803d; border-color: #4ade80;">🌟 APRESIASI TERTINGGI</div>
+      <h2 class="modal-title" style="color: #fde047;">SELAMAT! KAMU MENJADI BINTANG TEATER!</h2>
+      <div id="vic-student-info" style="font-size: 14px; color: #fde047; margin-bottom: 4px; font-weight: 800;">Siswa: - | Kelas: -</div>
+      <div class="stars-display" id="victory-stars">⭐⭐⭐</div>
+      <p class="modal-subtitle">
+        Luar biasa! Kamu berhasil menaklukkan seluruh babak, menguasai Unsur Intrinsik, Ekstrinsik, dan Pementasan Seni Drama Teater dengan gemilang!
+      </p>
+
+      <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-tile">
+          <div class="stat-val" id="vic-score">0</div>
+          <div class="stat-lbl">Total Skor</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val" id="vic-time">00:00</div>
+          <div class="stat-lbl">Waktu Selesai</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val" id="vic-correct">9/9</div>
+          <div class="stat-lbl">Kuis Tepat</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-val" id="vic-coins">0</div>
+          <div class="stat-lbl">Pena Emas</div>
+        </div>
+      </div>
+
+      <div class="edu-banner">
+        📜 <strong>Ringkasan Materi yang Dikuasai:</strong><br>
+        &bull; <em>Intrinsik:</em> Tema, Tokoh/Penokohan, Alur/Plot, Amanat, Latar, Dialog.<br>
+        &bull; <em>Ekstrinsik:</em> Latar Belakang Pengarang, Nilai Moral, Nilai Budaya, Nilai Sosial.<br>
+        &bull; <em>Pementasan:</em> Sutradara, Aktor, Tata Panggung, Tata Lampu, Tata Busana, Penonton.
+      </div>
+
+      <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-play-again" class="cta-btn" data-start="true">
+          <span>MAIN LAGI 🏆</span>
+        </button>
+        <button id="btn-open-lb-from-vic" class="cta-btn secondary">
+          <span>🌟 CEK PERINGKAT SAYA</span>
+        </button>
+        <button id="btn-export-sheet-vic" class="cta-btn secondary">
+          <span>📥 SIMPAN & UNDUH SPREADSHEET</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Pause Screen -->
+  <div id="modal-pause" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-badge">⏸️ JEDA SEJENAK</div>
+      <h2 class="modal-title">PENTAS DIJEDA</h2>
+      <p class="modal-subtitle">Istirahat di balik panggung sejenak.</p>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+        <button id="btn-resume-game" class="cta-btn">
+          <span>LANJUTKAN PENTAS ▶</span>
+        </button>
+        <button id="btn-open-lb-from-pause" class="cta-btn secondary">
+          <span>🏆 LIHAT LEADERBOARD</span>
+        </button>
+        <button id="btn-restart-current-level" class="cta-btn secondary">
+          <span>ULANGI BABAK INI 🔄</span>
+        </button>
+        <button id="btn-goto-title" class="cta-btn secondary">
+          <span>KEMBALI KE MENU 🏠</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Leaderboard (Papan Peringkat Berdasarkan Skor & Waktu Tercepat) -->
+  <div id="modal-leaderboard" class="modal-overlay" style="display: none;" role="dialog" aria-labelledby="lb-modal-title">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-badge" style="background: #b45309;">🏆 PAPAN PERINGKAT EDUTAINMENT</div>
+      <h2 class="modal-title" id="lb-modal-title">LEADERBOARD BINTANG TEATER</h2>
+      <p class="modal-subtitle" style="margin-bottom: 8px;">
+        Peringkat berdasarkan <strong>Skor Tertinggi</strong> &amp; <strong>Waktu Penyelesaian Tercepat</strong>
+      </p>
+
+      <!-- Filter Tabs: Semua, 12 M1, 12 M2, 12 M3, 12 M4, 12 M5 -->
+      <div class="leaderboard-tabs" id="lb-tabs-container">
+        <button class="lb-tab-btn active" data-class="Semua">Semua Kelas</button>
+        <button class="lb-tab-btn" data-class="12 M1">12 M1</button>
+        <button class="lb-tab-btn" data-class="12 M2">12 M2</button>
+        <button class="lb-tab-btn" data-class="12 M3">12 M3</button>
+        <button class="lb-tab-btn" data-class="12 M4">12 M4</button>
+        <button class="lb-tab-btn" data-class="12 M5">12 M5</button>
+      </div>
+
+      <!-- Scrollable Table -->
+      <div class="leaderboard-table-container">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th style="width: 48px; text-align: center;">Rank</th>
+              <th>Nama Siswa</th>
+              <th>Kelas</th>
+              <th style="text-align: right;">Skor</th>
+              <th style="text-align: right;">Waktu</th>
+              <th style="text-align: center;">Kuis</th>
+            </tr>
+          </thead>
+          <tbody id="lb-table-body">
+            <!-- Rendered dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Action Buttons: Download Spreadsheet CSV & Google Sheets Sync -->
+      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        <button id="btn-download-spreadsheet" class="cta-btn" style="padding: 8px 16px; font-size: 13px;">
+          <span>📥 UNDUH SPREADSHEET (.CSV)</span>
+        </button>
+        <button id="btn-open-sync-settings" class="cta-btn secondary" style="padding: 8px 16px; font-size: 13px;">
+          <span>🔗 SINKRONISASI GOOGLE SHEET</span>
+        </button>
+        <button id="btn-close-leaderboard" class="cta-btn secondary" style="padding: 8px 16px; font-size: 13px;">
+          <span>✖ TUTUP</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7: Google Sheets Live Sync Configuration for Teacher -->
+  <div id="modal-sheet-sync" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 540px; text-align: left;">
+      <div class="modal-badge" style="background: #15803d;">📊 INTEGRASI GOOGLE SPREADSHEET</div>
+      <h2 class="modal-title" style="text-align: center; font-size: 19px;">PENGATURAN GOOGLE SPREADSHEET</h2>
+      <p class="modal-subtitle" style="text-align: center; font-size: 12px; margin-bottom: 12px;">
+        Skor akhir siswa otomatis terkirim dan tersimpan langsung ke baris Google Spreadsheet guru secara realtime.
+      </p>
+
+      <div class="input-row">
+        <label for="input-webhook-url">URL Webhook Google Apps Script:</label>
+        <input type="url" id="input-webhook-url" class="student-text-input" placeholder="https://script.google.com/macros/s/.../exec" />
+      </div>
+
+      <div class="edu-banner" style="font-size: 11px; margin: 10px 0; line-height: 1.5;">
+        📌 <strong>Cara Menghubungkan Google Sheet Guru:</strong><br>
+        1. Buka file Google Spreadsheet baru di akun belajar.id Anda.<br>
+        2. Klik menu <em>Ekstensi &gt; Apps Script</em>, buat fungsi <code>doPost(e)</code> untuk menyimpan baris data siswa.<br>
+        3. Klik <em>Terapkan (Deploy) &gt; Penerapan Baru (New deployment) &gt; Aplikasi Web (Web app)</em>, pilih <em>Siapa saja (Anyone)</em>.<br>
+        4. Salin URL Web App dan tempel di kotak atas, lalu klik Simpan.<br>
+        5. Setiap siswa yang menyelesaikan game langsung otomatis tercatat di Spreadsheet guru!
+      </div>
+
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;">
+        <button id="btn-save-webhook" class="cta-btn" style="padding: 8px 18px; font-size: 13px;">
+          <span>💾 SIMPAN PENGATURAN</span>
+        </button>
+        <button id="btn-close-sheet-sync" class="cta-btn secondary" style="padding: 8px 18px; font-size: 13px;">
+          <span>BATAL</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT: Synthesizer, Assets & Game Engine -->
+  <!-- ========================================== -->
+  <script>
+    /**
+     * Web Audio API Synthesizer (Zero-latency procedural sound without external files)
+     */
+    class TheaterSoundSystem {
+      constructor() {
+        this.ctx = null;
+        this.isMuted = false;
+        this.bgmTimer = null;
+        this.bgmStep = 0;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.isMuted = !this.isMuted;
+        if (this.isMuted) {
+          this.stopBgm();
+        } else {
+          this.startBgm();
+        }
+        return this.isMuted;
+      }
+
+      playTone(freq, type = 'sine', duration = 0.15, vol = 0.25, slideTo = null) {
+        if (this.isMuted || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const now = this.ctx.currentTime;
+
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          if (slideTo !== null) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), now + duration);
+          }
+
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (e) {}
+      }
+
+      sfxJump() {
+        this.init();
+        this.playTone(160, 'square', 0.16, 0.2, 480);
+      }
+
+      sfxCoin() {
+        this.init();
+        if (this.isMuted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        this.playTone(987, 'sine', 0.12, 0.22);
+        setTimeout(() => this.playTone(1318, 'sine', 0.2, 0.25), 60);
+      }
+
+      sfxBlockBump() {
+        this.init();
+        this.playTone(180, 'triangle', 0.12, 0.35, 90);
+        setTimeout(() => this.playTone(550, 'sine', 0.1, 0.18), 40);
+      }
+
+      sfxStomp() {
+        this.init();
+        this.playTone(280, 'sawtooth', 0.12, 0.3, 70);
+      }
+
+      sfxCorrect() {
+        this.init();
+        if (this.isMuted || !this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'triangle', 0.22, 0.25), idx * 80);
+        });
+      }
+
+      sfxWrong() {
+        this.init();
+        if (this.isMuted || !this.ctx) return;
+        this.playTone(140, 'sawtooth', 0.22, 0.3, 85);
+        setTimeout(() => this.playTone(110, 'sawtooth', 0.32, 0.32, 65), 140);
+      }
+
+      sfxPowerup() {
+        this.init();
+        if (this.isMuted || !this.ctx) return;
+        const notes = [392, 493, 587, 783, 987];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'sine', 0.18, 0.22), idx * 60);
+        });
+      }
+
+      sfxFanfare() {
+        this.init();
+        if (this.isMuted || !this.ctx) return;
+        const melody = [
+          { f: 523, d: 0.12 }, { f: 659, d: 0.12 }, { f: 783, d: 0.12 },
+          { f: 1046, d: 0.35 }, { f: 783, d: 0.14 }, { f: 1046, d: 0.5 }
+        ];
+        let delay = 0;
+        melody.forEach(item => {
+          setTimeout(() => this.playTone(item.f, 'triangle', item.d, 0.3), delay);
+          delay += item.d * 1000 + 40;
+        });
+      }
+
+      startBgm() {
+        if (this.isMuted) return;
+        this.init();
+        if (this.bgmTimer) return;
+
+        // Catchy, energetic 8-bit theater chiptune loop
+        const notes = [
+          261.63, 329.63, 392.00, 523.25, 440.00, 392.00, 329.63, 293.66,
+          261.63, 329.63, 392.00, 440.00, 523.25, 587.33, 523.25, 392.00
+        ];
+        const bass = [
+          130.81, 130.81, 164.81, 164.81, 174.61, 174.61, 146.83, 146.83
+        ];
+
+        this.bgmTimer = setInterval(() => {
+          if (this.isMuted) return;
+          const lead = notes[this.bgmStep % notes.length];
+          const sub = bass[Math.floor((this.bgmStep / 2) % bass.length)];
+
+          this.playTone(lead, 'square', 0.08, 0.05);
+          if (this.bgmStep % 2 === 0) {
+            this.playTone(sub, 'triangle', 0.16, 0.07);
+          }
+          this.bgmStep++;
+        }, 180);
+      }
+
+      stopBgm() {
+        if (this.bgmTimer) {
+          clearInterval(this.bgmTimer);
+          this.bgmTimer = null;
+        }
+      }
+    }
+
+    const soundSys = new TheaterSoundSystem();
+
+    /**
+     * Educational Questions Bank (Bahasa Indonesia: Naskah & Pementasan Drama)
+     */
+    const QUIZ_DATA = [
+      // Level 1: Unsur Intrinsik Naskah Drama
+      {
+        id: 'l1_q1',
+        level: 1,
+        category: 'Unsur Intrinsik Drama',
+        question: 'Pesan moral atau pelajaran hidup yang ingin disampaikan pengarang melalui pementasan drama disebut...',
+        options: ['Amanat', 'Latar', 'Alur'],
+        correctIndex: 0,
+        explanation: 'Amanat adalah pesan moral atau nilai keteladanan yang disampaikan pengarang kepada pembaca atau penonton.'
+      },
+      {
+        id: 'l1_q2',
+        level: 1,
+        category: 'Unsur Intrinsik Drama',
+        question: 'Karakter atau tokoh dalam naskah drama yang bertindak menentang tokoh utama (protagonis) dinamakan...',
+        options: ['Tritagonis', 'Antagonis', 'Figuran'],
+        correctIndex: 1,
+        explanation: 'Tokoh antagonis adalah karakter yang memicu konflik dan menentang cita-cita/keinginan tokoh utama (protagonis).'
+      },
+      {
+        id: 'l1_q3',
+        level: 1,
+        category: 'Unsur Intrinsik Drama',
+        question: 'Rangkaian peristiwa berurutan yang saling berhubungan sebab-akibat membentuk jalannya cerita drama disebut...',
+        options: ['Tema', 'Latar', 'Alur / Plot'],
+        correctIndex: 2,
+        explanation: 'Alur (plot) adalah jalinan peristiwa dari pengenalan, pertikaian, klimaks, hingga penyelesaian naskah drama.'
+      },
+
+      // Level 2: Unsur Ekstrinsik Naskah Drama
+      {
+        id: 'l2_q1',
+        level: 2,
+        category: 'Unsur Ekstrinsik Drama',
+        question: 'Kondisi sosial, psikologis, dan pengalaman hidup penulis yang memengaruhi isi naskah drama tergolong dalam...',
+        options: ['Latar Belakang Pengarang', 'Tata Panggung', 'Dialog Tokoh'],
+        correctIndex: 0,
+        explanation: 'Latar belakang pengarang mencakup riwayat hidup, status sosial, dan pandangan hidup penulis naskah.'
+      },
+      {
+        id: 'l2_q2',
+        level: 2,
+        category: 'Unsur Ekstrinsik Drama',
+        question: 'Ajaran tentang baik dan buruknya tingkah laku budi pekerti yang terkandung dalam drama disebut nilai...',
+        options: ['Nilai Budaya', 'Nilai Moral', 'Nilai Estetika'],
+        correctIndex: 1,
+        explanation: 'Nilai moral berkaitan dengan akhlak, etika, dan budi pekerti yang menjadi pedoman perilaku manusia.'
+      },
+      {
+        id: 'l2_q3',
+        level: 2,
+        category: 'Unsur Ekstrinsik Drama',
+        question: 'Kebiasaan, tradisi, dan adat istiadat masyarakat yang tercermin dalam peristiwa drama merupakan perwujudan nilai...',
+        options: ['Nilai Agama', 'Nilai Politik', 'Nilai Budaya'],
+        correctIndex: 2,
+        explanation: 'Nilai budaya memuat norma, adat, kebiasaan hidup, dan warisan tradisi suatu masyarakat dalam naskah.'
+      },
+
+      // Level 3: Unsur Pembangun Pementasan Teater
+      {
+        id: 'l3_q1',
+        level: 3,
+        category: 'Unsur Pementasan Teater',
+        question: 'Siapakah yang bertanggung jawab memimpin jalannya latihan dan merancang konsep pementasan drama?',
+        options: ['Penonton', 'Sutradara', 'Tata Rias'],
+        correctIndex: 1,
+        explanation: 'Sutradara adalah pemimpin utama pementasan yang menafsirkan naskah, melatih aktor, dan menyatukan semua unsur artistik.'
+      },
+      {
+        id: 'l3_q2',
+        level: 3,
+        category: 'Unsur Pementasan Teater',
+        question: 'Elemen pementasan yang mengatur pencahayaan di atas panggung untuk menciptakan suasana adalah...',
+        options: ['Tata Busana', 'Tata Lampu / Lighting', 'Tata Suara'],
+        correctIndex: 1,
+        explanation: 'Tata lampu (lighting) bertugas menerangi panggung dan menciptakan efek atmosfer emosional/dramatis pada adegan.'
+      },
+      {
+        id: 'l3_q3',
+        level: 3,
+        category: 'Unsur Pementasan Teater',
+        question: 'Penataan dekorasi pentas yang menggambarkan latar tempat, waktu, dan suasana pementasan drama dinamakan...',
+        options: ['Tata Panggung / Scenery', 'Tata Rias / Makeup', 'Katalog Teater'],
+        correctIndex: 0,
+        explanation: 'Tata panggung (scenery) meliputi backdrop, properti, dan dekorasi yang memvisualisasikan latar cerita.'
+      }
+    ];
+
+    /**
+     * Procedural Pixel Art Asset Generator
+     * Creates crisp in-memory Canvas sprites to guarantee 0 broken assets and instant load!
+     */
+    function createProceduralAssets(scene) {
+      if (scene.textures.exists('player_idle')) {
+        return;
+      }
+
+      // 1. Player - "Siswa Pengembara" (32x48)
+      const playerCanvas = document.createElement('canvas');
+      playerCanvas.width = 32;
+      playerCanvas.height = 48;
+      const ctxP = playerCanvas.getContext('2d');
+
+      // Cap / Rambut
+      ctxP.fillStyle = '#1e3a8a'; // Blue cap
+      ctxP.fillRect(8, 4, 16, 8);
+      ctxP.fillStyle = '#3b82f6';
+      ctxP.fillRect(6, 10, 20, 4);
+      // Face
+      ctxP.fillStyle = '#ffedd5'; // Skin
+      ctxP.fillRect(8, 14, 16, 12);
+      // Eyes
+      ctxP.fillStyle = '#1e293b';
+      ctxP.fillRect(11, 18, 3, 3);
+      ctxP.fillRect(18, 18, 3, 3);
+      // Cheeks (blush)
+      ctxP.fillStyle = '#fca5a5';
+      ctxP.fillRect(9, 21, 3, 2);
+      ctxP.fillRect(20, 21, 3, 2);
+      // Smiling mouth
+      ctxP.fillStyle = '#dc2626';
+      ctxP.fillRect(13, 23, 6, 2);
+      // Torso / Bright Adventurer Vest
+      ctxP.fillStyle = '#f59e0b'; // Gold vest
+      ctxP.fillRect(8, 26, 16, 12);
+      ctxP.fillStyle = '#ffffff'; // Shirt collar
+      ctxP.fillRect(13, 26, 6, 4);
+      // Backpack
+      ctxP.fillStyle = '#92400e';
+      ctxP.fillRect(4, 28, 4, 10);
+      // Pants
+      ctxP.fillStyle = '#1e293b';
+      ctxP.fillRect(9, 38, 14, 6);
+      // Shoes
+      ctxP.fillStyle = '#7c2d12';
+      ctxP.fillRect(7, 44, 7, 4);
+      ctxP.fillRect(18, 44, 7, 4);
+
+      scene.textures.addCanvas('player_idle', playerCanvas);
+
+      // Player Jumping Frame
+      const jumpCanvas = document.createElement('canvas');
+      jumpCanvas.width = 32;
+      jumpCanvas.height = 48;
+      const ctxJ = jumpCanvas.getContext('2d');
+      ctxJ.drawImage(playerCanvas, 0, 0);
+      // Bent legs
+      ctxJ.fillStyle = '#0c0408';
+      ctxJ.fillRect(7, 42, 18, 6);
+      ctxJ.fillStyle = '#1e293b';
+      ctxJ.fillRect(8, 36, 6, 6);
+      ctxJ.fillRect(18, 36, 6, 6);
+      ctxJ.fillStyle = '#7c2d12';
+      ctxJ.fillRect(7, 40, 6, 4);
+      ctxJ.fillRect(19, 40, 6, 4);
+      scene.textures.addCanvas('player_jump', jumpCanvas);
+
+      // 2. Question Block (?) (32x32)
+      const qBlockCanvas = document.createElement('canvas');
+      qBlockCanvas.width = 32;
+      qBlockCanvas.height = 32;
+      const ctxQ = qBlockCanvas.getContext('2d');
+      // Gold gradient border
+      ctxQ.fillStyle = '#b45309';
+      ctxQ.fillRect(0, 0, 32, 32);
+      ctxQ.fillStyle = '#f59e0b';
+      ctxQ.fillRect(2, 2, 28, 28);
+      ctxQ.fillStyle = '#fde047';
+      ctxQ.fillRect(4, 4, 24, 24);
+      // Screws in corners
+      ctxQ.fillStyle = '#78350f';
+      ctxQ.fillRect(5, 5, 2, 2);
+      ctxQ.fillRect(25, 5, 2, 2);
+      ctxQ.fillRect(5, 25, 2, 2);
+      ctxQ.fillRect(25, 25, 2, 2);
+      // Big bold Question Mark
+      ctxQ.fillStyle = '#78350f';
+      ctxQ.font = 'bold 18px Arial';
+      ctxQ.textAlign = 'center';
+      ctxQ.textBaseline = 'middle';
+      ctxQ.fillText('?', 16, 16);
+      scene.textures.addCanvas('block_question', qBlockCanvas);
+
+      // Empty Block (After hit)
+      const emptyBlockCanvas = document.createElement('canvas');
+      emptyBlockCanvas.width = 32;
+      emptyBlockCanvas.height = 32;
+      const ctxE = emptyBlockCanvas.getContext('2d');
+      ctxE.fillStyle = '#475569';
+      ctxE.fillRect(0, 0, 32, 32);
+      ctxE.fillStyle = '#64748b';
+      ctxE.fillRect(2, 2, 28, 28);
+      ctxE.fillStyle = '#334155';
+      ctxE.fillRect(5, 5, 2, 2);
+      ctxE.fillRect(25, 5, 2, 2);
+      ctxE.fillRect(5, 25, 2, 2);
+      ctxE.fillRect(25, 25, 2, 2);
+      scene.textures.addCanvas('block_empty', emptyBlockCanvas);
+
+      // 3. Wooden Stage Platform Tile (32x32)
+      const woodCanvas = document.createElement('canvas');
+      woodCanvas.width = 32;
+      woodCanvas.height = 32;
+      const ctxW = woodCanvas.getContext('2d');
+      ctxW.fillStyle = '#451a03';
+      ctxW.fillRect(0, 0, 32, 32);
+      ctxW.fillStyle = '#78350f';
+      ctxW.fillRect(1, 1, 30, 30);
+      // Wood planks horizontal lines
+      ctxW.fillStyle = '#92400e';
+      ctxW.fillRect(2, 2, 28, 8);
+      ctxW.fillRect(2, 12, 28, 8);
+      ctxW.fillRect(2, 22, 28, 8);
+      // Brass nails
+      ctxW.fillStyle = '#fbbf24';
+      ctxW.fillRect(4, 5, 2, 2);
+      ctxW.fillRect(26, 15, 2, 2);
+      ctxW.fillRect(6, 25, 2, 2);
+      scene.textures.addCanvas('tile_wood', woodCanvas);
+
+      // 4. Pena Emas (Golden Quill Coin) (24x28)
+      const quillCanvas = document.createElement('canvas');
+      quillCanvas.width = 24;
+      quillCanvas.height = 28;
+      const ctxC = quillCanvas.getContext('2d');
+      // Feather plume
+      ctxC.fillStyle = '#fde047';
+      ctxC.beginPath();
+      ctxC.moveTo(12, 2);
+      ctxC.bezierCurveTo(22, 6, 22, 18, 12, 22);
+      ctxC.bezierCurveTo(2, 18, 2, 6, 12, 2);
+      ctxC.fill();
+      // Center spine
+      ctxC.strokeStyle = '#b45309';
+      ctxC.lineWidth = 2;
+      ctxC.beginPath();
+      ctxC.moveTo(12, 3);
+      ctxC.lineTo(12, 26);
+      ctxC.stroke();
+      // Golden Nib
+      ctxC.fillStyle = '#fbbf24';
+      ctxC.fillRect(10, 22, 4, 5);
+      scene.textures.addCanvas('coin_quill', quillCanvas);
+
+      // 5. Enemy - "Si Buta Aksara" / "Kritik Jahat" (30x30)
+      const enemyCanvas = document.createElement('canvas');
+      enemyCanvas.width = 30;
+      enemyCanvas.height = 30;
+      const ctxEn = enemyCanvas.getContext('2d');
+      // Round angry purple ink blob
+      ctxEn.fillStyle = '#4c1d95';
+      ctxEn.beginPath();
+      ctxEn.arc(15, 15, 12, 0, Math.PI * 2);
+      ctxEn.fill();
+      // Angry eyebrows
+      ctxEn.fillStyle = '#f87171';
+      ctxEn.fillRect(7, 8, 7, 2);
+      ctxEn.fillRect(16, 8, 7, 2);
+      // Cartoon White Eyes
+      ctxEn.fillStyle = '#ffffff';
+      ctxEn.fillRect(8, 11, 5, 6);
+      ctxEn.fillRect(17, 11, 5, 6);
+      // Pupils looking at player
+      ctxEn.fillStyle = '#000000';
+      ctxEn.fillRect(9, 13, 3, 4);
+      ctxEn.fillRect(18, 13, 3, 4);
+      // Grumpy mouth
+      ctxEn.strokeStyle = '#fca5a5';
+      ctxEn.lineWidth = 2;
+      ctxEn.beginPath();
+      ctxEn.moveTo(10, 22);
+      ctxEn.lineTo(20, 20);
+      ctxEn.stroke();
+      // Feet
+      ctxEn.fillStyle = '#1e1b4b';
+      ctxEn.fillRect(5, 25, 7, 5);
+      ctxEn.fillRect(18, 25, 7, 5);
+      scene.textures.addCanvas('enemy_blob', enemyCanvas);
+
+      // 6. Stage Exit Archway / Golden Gate (48x72)
+      const exitCanvas = document.createElement('canvas');
+      exitCanvas.width = 48;
+      exitCanvas.height = 72;
+      const ctxEx = exitCanvas.getContext('2d');
+      // Red velvet canopy
+      ctxEx.fillStyle = '#9f1239';
+      ctxEx.fillRect(4, 0, 40, 16);
+      ctxEx.fillStyle = '#fbbf24';
+      ctxEx.fillRect(2, 16, 44, 4);
+      // Columns
+      ctxEx.fillStyle = '#d97706';
+      ctxEx.fillRect(6, 20, 8, 52);
+      ctxEx.fillRect(34, 20, 8, 52);
+      // Portal glow
+      ctxEx.fillStyle = 'rgba(254, 240, 138, 0.4)';
+      ctxEx.fillRect(14, 20, 20, 52);
+      // Star emblem
+      ctxEx.fillStyle = '#fef08a';
+      ctxEx.font = '14px Arial';
+      ctxEx.fillText('★', 18, 14);
+      scene.textures.addCanvas('stage_exit', exitCanvas);
+
+      // 7. Star particle
+      const starCanvas = document.createElement('canvas');
+      starCanvas.width = 12;
+      starCanvas.height = 12;
+      const ctxS = starCanvas.getContext('2d');
+      ctxS.fillStyle = '#fef08a';
+      ctxS.beginPath();
+      ctxS.arc(6, 6, 5, 0, Math.PI * 2);
+      ctxS.fill();
+      scene.textures.addCanvas('star_particle', starCanvas);
+    }
+
+    /**
+     * Phaser 3 Main Game Scene
+     */
+    class TheaterGameScene extends Phaser.Scene {
+      constructor() {
+        super({ key: 'TheaterGameScene' });
+        this.currentLevel = 1;
+        this.score = 0;
+        this.coins = 0;
+        this.lives = 3;
+        this.correctCount = 0;
+        this.isMaskActive = false;
+        this.maskTimer = 0;
+        this.isHurt = false;
+
+        // Input state
+        this.inputLeft = false;
+        this.inputRight = false;
+        this.inputJump = false;
+      }
+
+      preload() {
+        createProceduralAssets(this);
+      }
+
+      create() {
+        this.cameras.main.setBackgroundColor('#13060f');
+
+        // Level dimensions
+        this.levelWidth = 2200;
+        this.levelHeight = 540;
+        this.physics.world.setBounds(0, 0, this.levelWidth, this.levelHeight + 100);
+
+        // Ambient Spotlight & Stage Atmosphere
+        this.createStageAtmosphere();
+
+        // Create Groups
+        this.platforms = this.physics.add.staticGroup();
+        this.questionBlocks = this.physics.add.staticGroup();
+        this.coinsGroup = this.physics.add.group();
+        this.enemies = this.physics.add.group();
+
+        // Build Level Layout
+        this.buildLevel(this.currentLevel);
+
+        // Create Player
+        this.player = this.physics.add.sprite(100, 380, 'player_idle');
+        this.player.setBounce(0.05);
+        this.player.setCollideWorldBounds(false);
+        this.player.body.setSize(24, 44);
+        this.player.body.setOffset(4, 4);
+
+        // Collisions
+        this.physics.add.collider(this.player, this.platforms);
+        this.physics.add.collider(this.enemies, this.platforms);
+        this.physics.add.collider(this.player, this.questionBlocks, this.onHitBlock, null, this);
+        this.physics.add.overlap(this.player, this.coinsGroup, this.onCollectCoin, null, this);
+        this.physics.add.overlap(this.player, this.enemies, this.onHitEnemy, null, this);
+        this.physics.add.overlap(this.player, this.exitGate, this.onReachExit, null, this);
+
+        // Camera follow
+        this.cameras.main.setBounds(0, 0, this.levelWidth, this.levelHeight);
+        this.cameras.main.startFollow(this.player, true, 0.08, 0.08, -120, 40);
+
+        // Keyboard Controls
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+        this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+        this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+
+        this.keyP.on('down', () => togglePause());
+        this.keyM.on('down', () => toggleMute());
+
+        // Update HUD
+        this.updateHUD();
+      }
+
+      createStageAtmosphere() {
+        // Dramatic overhead spotlight cones
+        const lightG = this.add.graphics();
+        lightG.fillStyle(0xfde047, 0.04);
+        for (let x = 200; x < this.levelWidth; x += 400) {
+          lightG.beginPath();
+          lightG.moveTo(x, 0);
+          lightG.lineTo(x - 120, 500);
+          lightG.lineTo(x + 120, 500);
+          lightG.closePath();
+          lightG.fill();
+        }
+
+        // Stage Back Wall velvet drape decor
+        for (let x = 0; x < this.levelWidth; x += 96) {
+          this.add.text(x + 20, 20, '🎭', { fontSize: '24px', alpha: 0.18 });
+        }
+      }
+
+      buildLevel(lvl) {
+        // Clear old entities if any
+        this.platforms.clear(true, true);
+        this.questionBlocks.clear(true, true);
+        this.coinsGroup.clear(true, true);
+        this.enemies.clear(true, true);
+
+        // 1. Solid Ground Stage Planks
+        for (let x = 0; x < this.levelWidth; x += 32) {
+          // Gaps in stage for platforming challenge (at level 2 & 3)
+          const isGap = (lvl >= 2 && x > 640 && x < 720) || (lvl >= 3 && x > 1200 && x < 1300);
+          if (!isGap) {
+            this.platforms.create(x + 16, 480, 'tile_wood');
+            this.platforms.create(x + 16, 512, 'tile_wood');
+          }
+        }
+
+        // Get questions for this level (3 questions)
+        const lvlQuestions = QUIZ_DATA.filter(q => q.level === lvl);
+
+        // Level-specific block & platform configurations
+        if (lvl === 1) {
+          // Babak I: Intrinsik
+          // Question Block 1 (Amanat) floats with clear ground underneath
+          this.createQuestionBlock(320, 340, lvlQuestions[0]);
+          this.createPlatform(160, 370, 3);
+          this.createCoinsLine(160, 320, 3);
+
+          // Question Block 2 (Tokoh Antagonis)
+          this.createQuestionBlock(760, 340, lvlQuestions[1]);
+          this.createPlatform(600, 360, 4);
+          this.createCoinsLine(600, 310, 4);
+
+          // Question Block 3 (Alur / Plot)
+          this.createQuestionBlock(1240, 340, lvlQuestions[2]);
+          this.createPlatform(1080, 360, 4);
+          this.createCoinsLine(1080, 310, 4);
+
+          // Enemies
+          this.spawnEnemy(500, 440, 420, 600);
+          this.spawnEnemy(980, 440, 900, 1120);
+          this.spawnEnemy(1460, 440, 1380, 1650);
+
+          // Exit Gate
+          this.exitGate = this.physics.add.staticSprite(1950, 428, 'stage_exit');
+        } else if (lvl === 2) {
+          // Babak II: Ekstrinsik
+          // Question Block 1 (Latar Belakang Pengarang)
+          this.createQuestionBlock(340, 340, lvlQuestions[0]);
+          this.createPlatform(180, 360, 3);
+          this.createCoinsLine(180, 310, 3);
+
+          // Floating stepping platforms
+          this.createPlatform(520, 340, 3);
+          this.createCoinsLine(520, 290, 3);
+
+          // Question Block 2 (Nilai Moral)
+          this.createQuestionBlock(880, 340, lvlQuestions[1]);
+          this.createPlatform(740, 360, 3);
+
+          // Question Block 3 (Nilai Budaya)
+          this.createQuestionBlock(1400, 340, lvlQuestions[2]);
+          this.createPlatform(1240, 350, 4);
+          this.createCoinsLine(1240, 300, 4);
+
+          // Enemies
+          this.spawnEnemy(440, 440, 360, 580);
+          this.spawnEnemy(820, 440, 760, 920);
+          this.spawnEnemy(1140, 440, 1060, 1260);
+          this.spawnEnemy(1620, 440, 1520, 1780);
+
+          // Exit Gate
+          this.exitGate = this.physics.add.staticSprite(2050, 428, 'stage_exit');
+        } else {
+          // Babak III: Pementasan
+          // Question Block 1 (Sutradara)
+          this.createQuestionBlock(320, 340, lvlQuestions[0]);
+          this.createPlatform(160, 360, 3);
+          this.createCoinsLine(160, 310, 3);
+
+          this.createPlatform(520, 330, 3);
+          this.createCoinsLine(520, 280, 3);
+
+          // Question Block 2 (Tata Lampu)
+          this.createQuestionBlock(920, 340, lvlQuestions[1]);
+          this.createPlatform(780, 350, 3);
+
+          // Question Block 3 (Tata Panggung)
+          this.createQuestionBlock(1440, 340, lvlQuestions[2]);
+          this.createPlatform(1280, 340, 4);
+          this.createCoinsLine(1280, 290, 4);
+
+          this.createPlatform(1700, 360, 4);
+          this.createCoinsLine(1700, 310, 4);
+
+          // Enemies
+          this.spawnEnemy(450, 440, 380, 520);
+          this.spawnEnemy(760, 440, 700, 840);
+          this.spawnEnemy(1120, 440, 1040, 1200);
+          this.spawnEnemy(1540, 440, 1460, 1640);
+          this.spawnEnemy(1820, 440, 1740, 1920);
+
+          // Exit Gate
+          this.exitGate = this.physics.add.staticSprite(2120, 428, 'stage_exit');
+        }
+      }
+
+      createPlatform(x, y, count) {
+        for (let i = 0; i < count; i++) {
+          this.platforms.create(x + (i * 32), y, 'tile_wood');
+        }
+      }
+
+      createQuestionBlock(x, y, questionData) {
+        const block = this.questionBlocks.create(x, y, 'block_question');
+        block.questionData = questionData;
+        block.isHit = false;
+        block.originY = y;
+        return block;
+      }
+
+      createCoinsLine(startX, y, count) {
+        for (let i = 0; i < count; i++) {
+          const coin = this.coinsGroup.create(startX + (i * 32), y, 'coin_quill');
+          coin.body.setAllowGravity(false);
+          // Floating bobbing effect
+          this.tweens.add({
+            targets: coin,
+            y: y - 6,
+            duration: 800 + (i * 100),
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+          });
+        }
+      }
+
+      spawnEnemy(x, y, minX, maxX) {
+        const enemy = this.enemies.create(x, y, 'enemy_blob');
+        enemy.setBounce(1, 0);
+        enemy.setCollideWorldBounds(false);
+        enemy.setVelocityX(-70);
+        enemy.minX = minX;
+        enemy.maxX = maxX;
+        enemy.isSquashed = false;
+      }
+
+      update(time, delta) {
+        if (!this.player || !this.player.body) return;
+
+        // Mask timer countdown
+        if (this.isMaskActive) {
+          this.maskTimer -= delta;
+          // Shimmering aura
+          this.player.setTint(Phaser.Math.RND.pick([0xfde047, 0xf59e0b, 0xec4899, 0x38bdf8]));
+          if (this.maskTimer <= 0) {
+            this.isMaskActive = false;
+            this.player.clearTint();
+            document.getElementById('hud-mask-indicator').style.display = 'none';
+          }
+        }
+
+        // Controls input checks (Keyboard OR Virtual Touch)
+        const moveLeft = this.cursors.left.isDown || this.keyA.isDown || this.inputLeft;
+        const moveRight = this.cursors.right.isDown || this.keyD.isDown || this.inputRight;
+        const jumpPressed = this.cursors.up.isDown || this.keyW.isDown || this.keySpace.isDown || this.inputJump;
+
+        const isGrounded = this.player.body.touching.down || this.player.body.blocked.down;
+
+        // Horizontal velocity
+        if (moveLeft) {
+          this.player.setVelocityX(-185);
+          this.player.setFlipX(true);
+        } else if (moveRight) {
+          this.player.setVelocityX(185);
+          this.player.setFlipX(false);
+        } else {
+          this.player.setVelocityX(0);
+        }
+
+        // Jump physics with coyote feel
+        if (jumpPressed && isGrounded) {
+          this.player.setVelocityY(-460);
+          this.player.setTexture('player_jump');
+          soundSys.sfxJump();
+        } else if (isGrounded) {
+          this.player.setTexture('player_idle');
+        }
+
+        // Fall into orchestra pit / void
+        if (this.player.y > 580) {
+          this.takeDamage(true);
+        }
+
+        // Enemy patrol boundaries
+        this.enemies.children.iterate((enemy) => {
+          if (!enemy || enemy.isSquashed) return;
+          if (enemy.x <= enemy.minX) {
+            enemy.setVelocityX(70);
+          } else if (enemy.x >= enemy.maxX) {
+            enemy.setVelocityX(-70);
+          }
+        });
+      }
+
+      onHitBlock(player, block) {
+        if (block.isHit) return;
+
+        // Player hits block from underneath
+        const isUnderneath = player.y > block.y + 10;
+        const isMovingUp = player.body.velocity.y <= 0 || player.body.blocked.up || player.body.touching.up;
+
+        if (isUnderneath && isMovingUp) {
+          block.isHit = true;
+          block.setTexture('block_empty');
+          soundSys.sfxBlockBump();
+          player.setVelocityY(80);
+
+          // Block bump bounce tween
+          this.tweens.add({
+            targets: block,
+            y: block.originY - 10,
+            duration: 90,
+            yoyo: true,
+            onComplete: () => {
+              block.y = block.originY;
+            }
+          });
+
+          // Sparkle burst
+          this.spawnSparkles(block.x, block.y);
+
+          // Open Quiz Modal
+          this.scene.pause();
+          openQuizModal(block.questionData);
+        }
+      }
+
+      onCollectCoin(player, coin) {
+        coin.disableBody(true, true);
+        soundSys.sfxCoin();
+        this.score += 10;
+        this.coins += 1;
+        this.updateHUD();
+
+        // Floating "+10" text
+        const txt = this.add.text(coin.x, coin.y - 10, '+10', {
+          fontFamily: 'Nunito',
+          fontSize: '14px',
+          fontWeight: '900',
+          color: '#fde047'
+        });
+        this.tweens.add({
+          targets: txt,
+          y: txt.y - 25,
+          alpha: 0,
+          duration: 600,
+          onComplete: () => txt.destroy()
+        });
+      }
+
+      onHitEnemy(player, enemy) {
+        if (!enemy || enemy.isSquashed) return;
+
+        // If player stomps enemy from above
+        const isStomp = player.body.velocity.y > 0 && player.y < enemy.y - 12;
+
+        if (isStomp) {
+          enemy.isSquashed = true;
+          enemy.setVelocityX(0);
+          enemy.setScale(1.2, 0.3);
+          soundSys.sfxStomp();
+          this.score += 50;
+          this.updateHUD();
+          player.setVelocityY(-260); // Bounce upward
+
+          this.spawnSparkles(enemy.x, enemy.y);
+
+          this.time.delayedCall(250, () => {
+            enemy.destroy();
+          });
+        } else if (this.isMaskActive) {
+          // Power up destroys enemy!
+          enemy.destroy();
+          soundSys.sfxStomp();
+          this.score += 50;
+          this.updateHUD();
+          this.spawnSparkles(enemy.x, enemy.y);
+        } else {
+          // Player takes damage
+          this.takeDamage(false, enemy.x);
+        }
+      }
+
+      takeDamage(isFall = false, enemyX = 0) {
+        if (this.isHurt) return;
+        this.isHurt = true;
+        this.lives--;
+        this.updateHUD();
+        soundSys.sfxWrong();
+
+        if (this.lives <= 0) {
+          // Game Over!
+          this.scene.pause();
+          showGameOverScreen(this.score, this.currentLevel, this.coins);
+          return;
+        }
+
+        if (isFall) {
+          // Respawn player at level start
+          this.player.setPosition(100, 360);
+          this.player.setVelocity(0, 0);
+        } else {
+          // Knockback
+          const dir = this.player.x < enemyX ? -160 : 160;
+          this.player.setVelocity(dir, -200);
+        }
+
+        // Flashing invulnerability for 2 seconds
+        this.tweens.add({
+          targets: this.player,
+          alpha: 0.3,
+          duration: 100,
+          yoyo: true,
+          repeat: 8,
+          onComplete: () => {
+            this.player.alpha = 1;
+            this.isHurt = false;
+          }
+        });
+      }
+
+      activateTheaterMask() {
+        this.isMaskActive = true;
+        this.maskTimer = 7000; // 7 seconds
+        soundSys.sfxPowerup();
+        document.getElementById('hud-mask-indicator').style.display = 'inline-flex';
+        this.spawnSparkles(this.player.x, this.player.y);
+      }
+
+      spawnSparkles(x, y) {
+        for (let i = 0; i < 8; i++) {
+          const spark = this.add.image(x, y, 'star_particle');
+          const angle = (Math.PI * 2 / 8) * i;
+          const dist = 32;
+          this.tweens.add({
+            targets: spark,
+            x: x + Math.cos(angle) * dist,
+            y: y + Math.sin(angle) * dist,
+            alpha: 0,
+            scale: 0.2,
+            duration: 400,
+            onComplete: () => spark.destroy()
+          });
+        }
+      }
+
+      onReachExit(player, exit) {
+        soundSys.sfxFanfare();
+        this.scene.pause();
+
+        if (this.currentLevel < 3) {
+          this.currentLevel++;
+          const levelNames = ['BABAK I: INTRINSIK', 'BABAK II: EKSTRINSIK', 'BABAK III: PEMENTASAN'];
+          alertFeedbackBanner(`🎉 BERHASIL MENYELESAIKAN BABAK! Menuju ${levelNames[this.currentLevel - 1]}`, () => {
+            this.scene.restart();
+          });
+        } else {
+          // VICTORY!
+          showVictoryScreen(this.score, this.correctCount, this.coins);
+        }
+      }
+
+      updateHUD() {
+        const levelLabels = [
+          'BABAK I: INTRINSIK',
+          'BABAK II: EKSTRINSIK',
+          'BABAK III: PEMENTASAN'
+        ];
+        document.getElementById('hud-level-label').textContent = levelLabels[this.currentLevel - 1] || 'BABAK I';
+        document.getElementById('hud-score').textContent = this.score;
+        document.getElementById('hud-coins').textContent = this.coins;
+
+        // Render 3 hearts
+        const heartsContainer = document.getElementById('hud-lives');
+        heartsContainer.innerHTML = '';
+        for (let i = 0; i < 3; i++) {
+          const heart = document.createElement('span');
+          heart.className = `heart-icon ${i < this.lives ? '' : 'lost'}`;
+          heart.textContent = '❤️';
+          heartsContainer.appendChild(heart);
+        }
+      }
+    }
+
+    // Initialize Phaser 3 Game Instance
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game-container',
+      width: 960,
+      height: 540,
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      },
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 920 },
+          debug: false
+        }
+      },
+      scene: TheaterGameScene
+    };
+
+    const phaserGame = new Phaser.Game(config);
+    window.phaserGame = phaserGame;
+    window.openQuizModal = openQuizModal;
+
+    /**
+     * UI, Timer, Leaderboard & Spreadsheet Controllers
+     */
+    const modalTitle = document.getElementById('modal-title');
+    const modalQuiz = document.getElementById('modal-quiz');
+    const modalGameOver = document.getElementById('modal-gameover');
+    const modalVictory = document.getElementById('modal-victory');
+    const modalPause = document.getElementById('modal-pause');
+    const modalLeaderboard = document.getElementById('modal-leaderboard');
+    const modalSheetSync = document.getElementById('modal-sheet-sync');
+    const hudLayer = document.getElementById('hud-layer');
+
+    // Student Profile State
+    let currentStudent = { name: '', kelas: '12 M1' };
+
+    // Timer State
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let isTimerRunning = false;
+
+    function formatTime(totalSeconds) {
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = Math.floor(totalSeconds % 60);
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      stopTimer();
+      timerSeconds = 0;
+      updateTimerDisplay();
+      isTimerRunning = true;
+      timerInterval = setInterval(() => {
+        if (isTimerRunning && document.body.dataset.state === 'playing') {
+          timerSeconds++;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      isTimerRunning = false;
+    }
+
+    function resumeTimer() {
+      isTimerRunning = true;
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isTimerRunning = false;
+    }
+
+    function updateTimerDisplay() {
+      const el = document.getElementById('hud-timer');
+      if (el) el.textContent = `⏱️ ${formatTime(timerSeconds)}`;
+    }
+
+    // Leaderboard & Spreadsheet Storage
+    const LEADERBOARD_STORAGE_KEY = 'BINTANG_TEATER_LEADERBOARD_V1';
+    const WEBHOOK_STORAGE_KEY = 'BINTANG_TEATER_SHEET_WEBHOOK';
+
+    const INITIAL_SEED_LEADERBOARD = [
+      { id: 'seed_1', name: 'Rizky Pratama', kelas: '12 M1', score: 850, timeSeconds: 88, formattedTime: '01:28', correctAnswersCount: 9, stars: 3, date: '25/10/2026' },
+      { id: 'seed_2', name: 'Anisa Putri', kelas: '12 M2', score: 850, timeSeconds: 94, formattedTime: '01:34', correctAnswersCount: 9, stars: 3, date: '25/10/2026' },
+      { id: 'seed_3', name: 'Fajar Nugraha', kelas: '12 M3', score: 810, timeSeconds: 102, formattedTime: '01:42', correctAnswersCount: 8, stars: 3, date: '25/10/2026' },
+      { id: 'seed_4', name: 'Siti Nurhaliza', kelas: '12 M4', score: 790, timeSeconds: 85, formattedTime: '01:25', correctAnswersCount: 8, stars: 3, date: '25/10/2026' },
+      { id: 'seed_5', name: 'Dimas Arya', kelas: '12 M1', score: 750, timeSeconds: 90, formattedTime: '01:30', correctAnswersCount: 8, stars: 3, date: '25/10/2026' },
+      { id: 'seed_6', name: 'Bunga Citra', kelas: '12 M5', score: 750, timeSeconds: 115, formattedTime: '01:55', correctAnswersCount: 8, stars: 3, date: '25/10/2026' },
+      { id: 'seed_7', name: 'Eko Prasetyo', kelas: '12 M2', score: 680, timeSeconds: 110, formattedTime: '01:50', correctAnswersCount: 7, stars: 2, date: '25/10/2026' },
+      { id: 'seed_8', name: 'Nadia Salsabila', kelas: '12 M3', score: 640, timeSeconds: 130, formattedTime: '02:10', correctAnswersCount: 6, stars: 2, date: '25/10/2026' },
+      { id: 'seed_9', name: 'Bayu Saputra', kelas: '12 M4', score: 600, timeSeconds: 95, formattedTime: '01:35', correctAnswersCount: 6, stars: 2, date: '25/10/2026' },
+      { id: 'seed_10', name: 'Tiara Dewi', kelas: '12 M5', score: 580, timeSeconds: 140, formattedTime: '02:20', correctAnswersCount: 5, stars: 2, date: '25/10/2026' }
+    ];
+
+    function getLeaderboard() {
+      try {
+        const raw = localStorage.getItem(LEADERBOARD_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {}
+      saveLeaderboard(INITIAL_SEED_LEADERBOARD);
+      return [...INITIAL_SEED_LEADERBOARD];
+    }
+
+    function saveLeaderboard(entries) {
+      try {
+        localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(entries));
+      } catch (e) {}
+    }
+
+    // Sort by: 1. Highest Score, 2. Fastest Time
+    function sortLeaderboardEntries(entries) {
+      return [...entries].sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return a.timeSeconds - b.timeSeconds;
+      });
+    }
+
+    function recordStudentScore(score, correctCount, coins, isVictory) {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const stars = correctCount >= 8 ? 3 : (correctCount >= 5 ? 2 : 1);
+
+      const entry = {
+        id: 'run_' + Date.now(),
+        name: currentStudent.name || 'Siswa',
+        kelas: currentStudent.kelas || '12 M1',
+        score: score,
+        timeSeconds: timerSeconds,
+        formattedTime: formatTime(timerSeconds),
+        correctAnswersCount: correctCount,
+        stars: stars,
+        date: dateStr,
+        isCurrentRun: true
+      };
+
+      const list = getLeaderboard().map(item => ({ ...item, isCurrentRun: false }));
+      list.push(entry);
+      saveLeaderboard(list);
+
+      syncToGoogleSheet(entry);
+      return entry;
+    }
+
+    async function syncToGoogleSheet(entry) {
+      const webhookUrl = localStorage.getItem(WEBHOOK_STORAGE_KEY);
+      if (!webhookUrl || !webhookUrl.startsWith('http')) return;
+
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry)
+        });
+      } catch (e) {
+        console.warn('Google Sheet Sync error:', e);
+      }
+    }
+
+    function downloadSpreadsheetCSV() {
+      const entries = sortLeaderboardEntries(getLeaderboard());
+      const headers = ['Peringkat', 'Nama Siswa', 'Kelas', 'Skor Akhir', 'Waktu Penyelesaian', 'Total Waktu (Detik)', 'Kuis Benar', 'Bintang', 'Tanggal'];
+      const rows = entries.map((e, idx) => [
+        idx + 1,
+        `"${(e.name || '').replace(/"/g, '""')}"`,
+        `"${e.kelas || ''}"`,
+        e.score,
+        `"${e.formattedTime || formatTime(e.timeSeconds)}"`,
+        e.timeSeconds,
+        e.correctAnswersCount,
+        e.stars,
+        `"${e.date}"`
+      ].join(','));
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const now = new Date();
+      const datePart = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
+      link.setAttribute('download', `Rekap_Nilai_Drama_Teater_${datePart}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    let currentLbFilter = 'Semua';
+
+    function renderLeaderboardTable(filterClass = 'Semua') {
+      currentLbFilter = filterClass;
+      const allEntries = getLeaderboard();
+      const sorted = sortLeaderboardEntries(allEntries);
+      const filtered = filterClass === 'Semua' ? sorted : sorted.filter(e => e.kelas === filterClass);
+
+      const tbody = document.getElementById('lb-table-body');
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">Belum ada catatan skor untuk kelas ${filterClass}</td></tr>`;
+        return;
+      }
+
+      const rankIcons = ['🥇', '🥈', '🥉'];
+
+      filtered.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        if (item.isCurrentRun) {
+          tr.className = 'current-run';
+        }
+        const rankDisplay = idx < 3 ? rankIcons[idx] : `#${idx + 1}`;
+        const starsDisplay = '⭐'.repeat(item.stars || 1);
+
+        tr.innerHTML = `
+          <td style="text-align: center;"><span class="lb-rank">${rankDisplay}</span></td>
+          <td>
+            <div style="font-weight: 800; color: #fff;">${escapeHtml(item.name)}</div>
+            <div style="font-size: 10px; color: #94a3b8;">${item.date}</div>
+          </td>
+          <td><span class="badge-class">${item.kelas}</span></td>
+          <td style="text-align: right; color: var(--gold-light); font-weight: 900; font-variant-numeric: tabular-nums;">${item.score}</td>
+          <td style="text-align: right; color: #a7f3d0; font-weight: 800; font-variant-numeric: tabular-nums;">${item.formattedTime || formatTime(item.timeSeconds)}</td>
+          <td style="text-align: center; font-size: 11px;">${item.correctAnswersCount}/9 <span style="font-size: 10px;">${starsDisplay}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, (m) => {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    function openLeaderboardModal(filterClass = 'Semua') {
+      // Set active tab button
+      document.querySelectorAll('.lb-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-class') === filterClass);
+      });
+      renderLeaderboardTable(filterClass);
+      modalLeaderboard.style.display = 'flex';
+    }
+
+    function closeLeaderboardModal() {
+      modalLeaderboard.style.display = 'none';
+    }
+
+    function openSheetSyncModal() {
+      const saved = localStorage.getItem(WEBHOOK_STORAGE_KEY) || '';
+      document.getElementById('input-webhook-url').value = saved;
+      modalSheetSync.style.display = 'flex';
+    }
+
+    function closeSheetSyncModal() {
+      modalSheetSync.style.display = 'none';
+    }
+
+    function getGameScene() {
+      return phaserGame.scene.keys['TheaterGameScene'];
+    }
+
+    function startGame() {
+      const nameInput = document.getElementById('input-student-name');
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      const classSelect = document.getElementById('select-student-class');
+      const classVal = classSelect ? classSelect.value : '12 M1';
+
+      if (!nameVal) {
+        if (nameInput) {
+          nameInput.classList.add('input-error');
+          nameInput.focus();
+        }
+        alertFeedbackBanner('⚠️ Mohon isi Nama Lengkap Siswa terlebih dahulu!');
+        return;
+      }
+
+      if (nameInput) nameInput.classList.remove('input-error');
+      currentStudent = { name: nameVal, kelas: classVal };
+
+      // Update student tag in HUD
+      document.getElementById('hud-student-tag').textContent = `👤 ${currentStudent.name} (${currentStudent.kelas})`;
+
+      document.body.dataset.state = 'playing';
+      modalTitle.style.display = 'none';
+      modalGameOver.style.display = 'none';
+      modalVictory.style.display = 'none';
+      modalPause.style.display = 'none';
+      modalLeaderboard.style.display = 'none';
+      modalSheetSync.style.display = 'none';
+      hudLayer.style.display = 'block';
+
+      soundSys.init();
+      soundSys.startBgm();
+      startTimer();
+
+      const scene = getGameScene();
+      if (scene) {
+        scene.currentLevel = 1;
+        scene.score = 0;
+        scene.coins = 0;
+        scene.lives = 3;
+        scene.correctCount = 0;
+        scene.isMaskActive = false;
+        scene.isHurt = false;
+        scene.scene.resume();
+        scene.scene.restart();
+      }
+    }
+
+    function togglePause() {
+      const scene = getGameScene();
+      if (!scene) return;
+      if (document.body.dataset.state !== 'playing' && document.body.dataset.state !== 'paused') return;
+
+      if (modalPause.style.display === 'flex') {
+        // Resume
+        modalPause.style.display = 'none';
+        document.body.dataset.state = 'playing';
+        scene.scene.resume();
+        soundSys.startBgm();
+        resumeTimer();
+      } else {
+        // Pause
+        modalPause.style.display = 'flex';
+        document.body.dataset.state = 'paused';
+        scene.scene.pause();
+        soundSys.stopBgm();
+        pauseTimer();
+      }
+    }
+
+    function toggleMute() {
+      const isMuted = soundSys.toggleMute();
+      document.getElementById('btn-mute').textContent = isMuted ? '🔇' : '🔊';
+    }
+
+    // Temporary Banner for Level Transitions
+    function alertFeedbackBanner(msg, callback) {
+      const banner = document.createElement('div');
+      banner.style.position = 'fixed';
+      banner.style.top = '40%';
+      banner.style.left = '50%';
+      banner.style.transform = 'translate(-50%, -50%)';
+      banner.style.background = 'linear-gradient(180deg, #b45309, #78350f)';
+      banner.style.border = '3px solid #fbbf24';
+      banner.style.borderRadius = '16px';
+      banner.style.padding = '18px 24px';
+      banner.style.color = '#fff';
+      banner.style.fontSize = '16px';
+      banner.style.fontWeight = '900';
+      banner.style.textAlign = 'center';
+      banner.style.zIndex = '999';
+      banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8)';
+      banner.textContent = msg;
+
+      document.body.appendChild(banner);
+      setTimeout(() => {
+        banner.remove();
+        if (callback) callback();
+      }, 1600);
+    }
+
+    // Quiz Dialog Controller
+    let activeQuestion = null;
+
+    function openQuizModal(question) {
+      pauseTimer(); // Fair timer: reading question doesn't penalize platforming run
+      activeQuestion = question;
+      document.getElementById('quiz-category-badge').textContent = `🎭 ${question.category.toUpperCase()} - BABAK ${question.level}`;
+      document.getElementById('quiz-question-text').textContent = question.question;
+
+      const optsContainer = document.getElementById('quiz-options-container');
+      optsContainer.innerHTML = '';
+      optsContainer.style.display = 'flex';
+
+      const letters = ['A', 'B', 'C'];
+      question.options.forEach((optText, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-option-btn';
+        btn.setAttribute('data-opt', idx);
+        btn.innerHTML = `<span class="quiz-option-letter">${letters[idx]}</span><span class="quiz-option-text">${optText}</span>`;
+        btn.onclick = () => onSelectQuizOption(idx);
+        optsContainer.appendChild(btn);
+      });
+
+      const fbBox = document.getElementById('quiz-feedback-box');
+      fbBox.style.display = 'none';
+      document.getElementById('btn-quiz-continue').style.display = 'none';
+
+      modalQuiz.style.display = 'flex';
+    }
+
+    function onSelectQuizOption(chosenIdx) {
+      if (!activeQuestion) return;
+      const scene = getGameScene();
+      const isCorrect = chosenIdx === activeQuestion.correctIndex;
+      const fbBox = document.getElementById('quiz-feedback-box');
+      const fbTitle = document.getElementById('quiz-feedback-title');
+      const fbDesc = document.getElementById('quiz-feedback-desc');
+      const continueBtn = document.getElementById('btn-quiz-continue');
+      const optsContainer = document.getElementById('quiz-options-container');
+
+      const buttons = optsContainer.querySelectorAll('.quiz-option-btn');
+      buttons.forEach(b => b.disabled = true);
+
+      if (isCorrect) {
+        soundSys.sfxCorrect();
+        fbBox.className = 'feedback-box correct';
+        fbTitle.textContent = '✅ JAWABAN BENAR! (+100 SKOR)';
+        fbDesc.textContent = `Hebat! ${activeQuestion.explanation} Kamu mendapatkan Topeng Teater Pelindung!`;
+        if (scene) {
+          scene.score += 100;
+          scene.correctCount++;
+          scene.activateTheaterMask();
+          scene.updateHUD();
+        }
+      } else {
+        soundSys.sfxWrong();
+        fbBox.className = 'feedback-box wrong';
+        fbTitle.textContent = '❌ KURANG TEPAT! (-1 NYAWA)';
+        fbDesc.textContent = `Jawaban yang benar adalah: "${activeQuestion.options[activeQuestion.correctIndex]}". ${activeQuestion.explanation}`;
+        if (scene) {
+          scene.lives--;
+          scene.updateHUD();
+        }
+      }
+
+      fbBox.style.display = 'block';
+      continueBtn.style.display = 'inline-flex';
+      continueBtn.onclick = () => {
+        modalQuiz.style.display = 'none';
+        if (scene) {
+          if (scene.lives <= 0) {
+            showGameOverScreen(scene.score, scene.currentLevel, scene.coins);
+          } else {
+            scene.scene.resume();
+            resumeTimer();
+          }
+        }
+      };
+    }
+
+    function showGameOverScreen(score, lvl, coins) {
+      stopTimer();
+      document.body.dataset.state = 'gameover';
+      modalQuiz.style.display = 'none';
+      modalGameOver.style.display = 'flex';
+
+      const entry = recordStudentScore(score, getGameScene() ? getGameScene().correctCount : 0, coins, false);
+
+      document.getElementById('go-student-info').textContent = `👤 Siswa: ${currentStudent.name || 'Siswa'} | Kelas: ${currentStudent.kelas || '12 M1'}`;
+      document.getElementById('go-score').textContent = score;
+      document.getElementById('go-time').textContent = formatTime(timerSeconds);
+      document.getElementById('go-level').textContent = `Babak ${lvl}`;
+      document.getElementById('go-coins').textContent = coins;
+
+      soundSys.stopBgm();
+      soundSys.sfxWrong();
+    }
+
+    function showVictoryScreen(score, correctCount, coins) {
+      stopTimer();
+      document.body.dataset.state = 'gameover';
+      modalQuiz.style.display = 'none';
+      modalVictory.style.display = 'flex';
+
+      const entry = recordStudentScore(score, correctCount, coins, true);
+
+      document.getElementById('vic-student-info').textContent = `👤 Bintang: ${currentStudent.name || 'Siswa'} | Kelas: ${currentStudent.kelas || '12 M1'}`;
+      document.getElementById('vic-score').textContent = score;
+      document.getElementById('vic-time').textContent = formatTime(timerSeconds);
+      document.getElementById('vic-correct').textContent = `${correctCount}/9`;
+      document.getElementById('vic-coins').textContent = coins;
+
+      const stars = correctCount >= 8 ? '⭐⭐⭐' : (correctCount >= 5 ? '⭐⭐' : '⭐');
+      document.getElementById('victory-stars').textContent = stars;
+
+      soundSys.stopBgm();
+      soundSys.sfxFanfare();
+    }
+
+    window.showVictoryScreen = showVictoryScreen;
+    window.showGameOverScreen = showGameOverScreen;
+    window.openLeaderboardModal = openLeaderboardModal;
+    window.downloadSpreadsheetCSV = downloadSpreadsheetCSV;
+
+    // Attach Event Listeners to Buttons
+    document.getElementById('btn-start-game').addEventListener('click', startGame);
+    document.getElementById('btn-restart-game').addEventListener('click', startGame);
+    document.getElementById('btn-play-again').addEventListener('click', startGame);
+    document.getElementById('btn-pause').addEventListener('click', togglePause);
+    document.getElementById('btn-mute').addEventListener('click', toggleMute);
+    document.getElementById('btn-resume-game').addEventListener('click', togglePause);
+
+    // Leaderboard Openers
+    document.getElementById('btn-open-leaderboard').addEventListener('click', () => openLeaderboardModal('Semua'));
+    document.getElementById('btn-hud-leaderboard').addEventListener('click', () => openLeaderboardModal(currentStudent.kelas || 'Semua'));
+    document.getElementById('btn-open-lb-from-vic').addEventListener('click', () => openLeaderboardModal(currentStudent.kelas || 'Semua'));
+    document.getElementById('btn-open-lb-from-go').addEventListener('click', () => openLeaderboardModal(currentStudent.kelas || 'Semua'));
+    document.getElementById('btn-open-lb-from-pause').addEventListener('click', () => openLeaderboardModal('Semua'));
+    document.getElementById('btn-close-leaderboard').addEventListener('click', closeLeaderboardModal);
+
+    // Leaderboard Tabs Click
+    document.getElementById('lb-tabs-container').addEventListener('click', (e) => {
+      const btn = e.target.closest('.lb-tab-btn');
+      if (btn) {
+        document.querySelectorAll('.lb-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderLeaderboardTable(btn.getAttribute('data-class'));
+      }
+    });
+
+    // Spreadsheet Download Buttons
+    document.getElementById('btn-download-spreadsheet').addEventListener('click', downloadSpreadsheetCSV);
+    document.getElementById('btn-export-sheet-title').addEventListener('click', downloadSpreadsheetCSV);
+    document.getElementById('btn-export-sheet-vic').addEventListener('click', downloadSpreadsheetCSV);
+    document.getElementById('btn-export-sheet-go').addEventListener('click', downloadSpreadsheetCSV);
+
+    // Google Sheets Sync Settings
+    document.getElementById('btn-open-sync-settings').addEventListener('click', openSheetSyncModal);
+    document.getElementById('btn-close-sheet-sync').addEventListener('click', closeSheetSyncModal);
+    document.getElementById('btn-save-webhook').addEventListener('click', () => {
+      const val = document.getElementById('input-webhook-url').value.trim();
+      localStorage.setItem(WEBHOOK_STORAGE_KEY, val);
+      alertFeedbackBanner('✅ Pengaturan Google Spreadsheet berhasil disimpan!');
+      closeSheetSyncModal();
+    });
+
+    document.getElementById('btn-restart-current-level').addEventListener('click', () => {
+      modalPause.style.display = 'none';
+      document.body.dataset.state = 'playing';
+      const scene = getGameScene();
+      if (scene) {
+        scene.scene.resume();
+        scene.scene.restart();
+      }
+      soundSys.startBgm();
+      resumeTimer();
+    });
+
+    document.getElementById('btn-goto-title').addEventListener('click', () => {
+      modalPause.style.display = 'none';
+      document.body.dataset.state = 'title';
+      modalTitle.style.display = 'flex';
+      hudLayer.style.display = 'none';
+      soundSys.stopBgm();
+      stopTimer();
+    });
+
+    // Touch Controls Wiring
+    function bindTouchButton(elementId, onActive, onInactive) {
+      const btn = document.getElementById(elementId);
+      if (!btn) return;
+
+      const activate = (e) => {
+        if (e) e.preventDefault();
+        btn.classList.add('active');
+        onActive();
+      };
+
+      const deactivate = (e) => {
+        if (e) e.preventDefault();
+        btn.classList.remove('active');
+        onInactive();
+      };
+
+      btn.addEventListener('touchstart', activate, { passive: false });
+      btn.addEventListener('touchend', deactivate, { passive: false });
+      btn.addEventListener('touchcancel', deactivate, { passive: false });
+      btn.addEventListener('mousedown', activate);
+      btn.addEventListener('mouseup', deactivate);
+      btn.addEventListener('mouseleave', deactivate);
+    }
+
+    bindTouchButton('vbtn-left',
+      () => { const s = getGameScene(); if (s) s.inputLeft = true; },
+      () => { const s = getGameScene(); if (s) s.inputLeft = false; }
+    );
+
+    bindTouchButton('vbtn-right',
+      () => { const s = getGameScene(); if (s) s.inputRight = true; },
+      () => { const s = getGameScene(); if (s) s.inputRight = false; }
+    );
+
+    bindTouchButton('vbtn-jump',
+      () => { const s = getGameScene(); if (s) s.inputJump = true; },
+      () => { const s = getGameScene(); if (s) s.inputJump = false; }
+    );
+
+    // Global keyboard shortcuts for Enter / Space on Title screen
+    window.addEventListener('keydown', (e) => {
+      if (document.body.dataset.state === 'title' && (e.code === 'Enter' || e.code === 'Space')) {
+        // If focus is in input, allow typing space or enter
+        if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+          if (e.code === 'Enter') startGame();
+          return;
+        }
+        startGame();
+      }
+    });
+
+    // Auto-start support for automated testing or ?autostart=1
+    if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+      window.addEventListener('load', () => {
+        const nameInput = document.getElementById('input-student-name');
+        if (nameInput) nameInput.value = 'Siswa Penguji';
+        setTimeout(startGame, 300);
+      });
+    }
+  </script>
+</body>
+</html>

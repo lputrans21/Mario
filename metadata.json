@@ -1,0 +1,6 @@
+{
+  "name": "Petualangan Bintang Teater - Game Platformer 2D",
+  "description": "Game platformer 2D edukatif ala Super Mario untuk belajar materi drama Bahasa Indonesia: unsur intrinsik, ekstrinsik, dan pementasan teater dengan kontrol sentuh mobile.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
