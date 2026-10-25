@@ -1822,6 +1822,11 @@
         this.inputLeft = false;
         this.inputRight = false;
         this.inputJump = false;
+
+        // Coyote Time & Jump Buffer for responsive, forgiving platformer controls
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
+        this.wasJumpDown = false;
       }
 
       preload() {
@@ -1911,8 +1916,8 @@
 
         // 1. Solid Ground Stage Planks
         for (let x = 0; x < this.levelWidth; x += 32) {
-          // Gaps in stage for platforming challenge (at level 2 & 3)
-          const isGap = (lvl >= 2 && x > 640 && x < 720) || (lvl >= 3 && x > 1200 && x < 1300);
+          // Stage gap for level 2 (narrowed to 70px) and level 3 (fair crossing)
+          const isGap = (lvl === 2 && x > 640 && x < 710) || (lvl === 3 && x > 1180 && x < 1250);
           if (!isGap) {
             this.platforms.create(x + 16, 480, 'tile_wood');
             this.platforms.create(x + 16, 512, 'tile_wood');
@@ -1925,86 +1930,109 @@
         // Level-specific block & platform configurations
         if (lvl === 1) {
           // Babak I: Intrinsik
-          // Question Block 1 (Amanat) floats with clear ground underneath
-          this.createQuestionBlock(320, 340, lvlQuestions[0]);
-          this.createPlatform(160, 370, 3);
-          this.createCoinsLine(160, 320, 3);
+          // Question Block 1 (Amanat) - lowered to Y=370 for effortless headbutting from ground
+          this.createQuestionBlock(320, 370, lvlQuestions[0]);
+          this.createPlatform(160, 390, 3);
+          this.createCoinsLine(160, 330, 3);
 
-          // Question Block 2 (Tokoh Antagonis)
-          this.createQuestionBlock(760, 340, lvlQuestions[1]);
-          this.createPlatform(600, 360, 4);
-          this.createCoinsLine(600, 310, 4);
+          // Question Block 2 (Tokoh Antagonis) - lowered to Y=370
+          this.createQuestionBlock(760, 370, lvlQuestions[1]);
+          this.createPlatform(600, 390, 4);
+          this.createCoinsLine(600, 330, 4);
 
-          // Question Block 3 (Alur / Plot)
-          this.createQuestionBlock(1240, 340, lvlQuestions[2]);
-          this.createPlatform(1080, 360, 4);
-          this.createCoinsLine(1080, 310, 4);
+          // Question Block 3 (Alur / Plot) - lowered to Y=370
+          this.createQuestionBlock(1240, 370, lvlQuestions[2]);
+          this.createPlatform(1080, 390, 4);
+          this.createCoinsLine(1080, 330, 4);
 
           // Enemies
-          this.spawnEnemy(500, 440, 420, 600);
-          this.spawnEnemy(980, 440, 900, 1120);
-          this.spawnEnemy(1460, 440, 1380, 1650);
+          this.spawnEnemy(500, 440, 420, 580);
+          this.spawnEnemy(960, 440, 880, 1060);
+          this.spawnEnemy(1440, 440, 1360, 1600);
 
           // Exit Gate
           this.exitGate = this.physics.add.staticSprite(1950, 428, 'stage_exit');
         } else if (lvl === 2) {
           // Babak II: Ekstrinsik
-          // Question Block 1 (Latar Belakang Pengarang)
-          this.createQuestionBlock(340, 340, lvlQuestions[0]);
-          this.createPlatform(180, 360, 3);
-          this.createCoinsLine(180, 310, 3);
+          // Question Block 1 (Latar Belakang Pengarang) - lowered to Y=370
+          this.createQuestionBlock(340, 370, lvlQuestions[0]);
+          this.createPlatform(180, 390, 3);
+          this.createCoinsLine(180, 330, 3);
 
           // Floating stepping platforms
-          this.createPlatform(520, 340, 3);
-          this.createCoinsLine(520, 290, 3);
+          this.createPlatform(500, 380, 3);
+          this.createCoinsLine(500, 320, 3);
 
-          // Question Block 2 (Nilai Moral)
-          this.createQuestionBlock(880, 340, lvlQuestions[1]);
-          this.createPlatform(740, 360, 3);
+          // Safe bridge stepping platform over the pit gap (x: 640-710)
+          this.createPlatform(640, 420, 3);
 
-          // Question Block 3 (Nilai Budaya)
-          this.createQuestionBlock(1400, 340, lvlQuestions[2]);
-          this.createPlatform(1240, 350, 4);
-          this.createCoinsLine(1240, 300, 4);
+          // Question Block 2 (Nilai Moral) - lowered to Y=370
+          this.createQuestionBlock(880, 370, lvlQuestions[1]);
+          this.createPlatform(740, 390, 3);
+          this.createCoinsLine(740, 330, 3);
+
+          // Question Block 3 (Nilai Budaya) - lowered to Y=370
+          this.createQuestionBlock(1400, 370, lvlQuestions[2]);
+          this.createPlatform(1240, 390, 4);
+          this.createCoinsLine(1240, 330, 4);
 
           // Enemies
           this.spawnEnemy(440, 440, 360, 580);
           this.spawnEnemy(820, 440, 760, 920);
-          this.spawnEnemy(1140, 440, 1060, 1260);
-          this.spawnEnemy(1620, 440, 1520, 1780);
+          this.spawnEnemy(1140, 440, 1060, 1240);
+          this.spawnEnemy(1600, 440, 1500, 1750);
 
           // Exit Gate
           this.exitGate = this.physics.add.staticSprite(2050, 428, 'stage_exit');
         } else {
-          // Babak III: Pementasan
-          // Question Block 1 (Sutradara)
-          this.createQuestionBlock(320, 340, lvlQuestions[0]);
-          this.createPlatform(160, 360, 3);
-          this.createCoinsLine(160, 310, 3);
+          // Babak III: Pementasan (Final Stage)
+          // Question Block 1 (Sutradara) - lowered to Y=370
+          this.createQuestionBlock(320, 370, lvlQuestions[0]);
+          this.createPlatform(160, 390, 3);
+          this.createCoinsLine(160, 330, 3);
 
-          this.createPlatform(520, 330, 3);
-          this.createCoinsLine(520, 280, 3);
+          this.createPlatform(500, 380, 3);
+          this.createCoinsLine(500, 320, 3);
 
-          // Question Block 2 (Tata Lampu)
-          this.createQuestionBlock(920, 340, lvlQuestions[1]);
-          this.createPlatform(780, 350, 3);
+          // Question Block 2 (Tata Lampu) - lowered to Y=370
+          this.createQuestionBlock(900, 370, lvlQuestions[1]);
+          this.createPlatform(740, 390, 3);
+          this.createCoinsLine(740, 330, 3);
 
-          // Question Block 3 (Tata Panggung)
-          this.createQuestionBlock(1440, 340, lvlQuestions[2]);
-          this.createPlatform(1280, 340, 4);
-          this.createCoinsLine(1280, 290, 4);
+          // Safe bridge stepping platform over mid-level pit (x: 1180-1250)
+          this.createPlatform(1180, 420, 3);
 
-          this.createPlatform(1700, 360, 4);
-          this.createCoinsLine(1700, 310, 4);
+          // Question Block 3 (Tata Panggung) - lowered to Y=370
+          this.createQuestionBlock(1420, 370, lvlQuestions[2]);
+          this.createPlatform(1260, 390, 4);
+          this.createCoinsLine(1260, 330, 4);
 
-          // Enemies
-          this.spawnEnemy(450, 440, 380, 520);
+          // PERBAIKAN STAGE 3: Area lompatan akhir menuju finish dirancang ramah dan adil
+          // Tangga bertingkat berjarak dekat (50-80px horizontal gap) dengan jalur koin penuntun
+          // Step 1: Pijakan awal keluar dari area kuis 3
+          this.createPlatform(1600, 390, 3);
+          this.createCoinsLine(1600, 330, 3);
+
+          // Step 2: Pijakan perantara yang mudah dijangkau
+          this.createPlatform(1740, 370, 3);
+          this.createCoinsLine(1740, 310, 3);
+
+          // Step 3: Pijakan penghubung menuju panggung akhir
+          this.createPlatform(1880, 380, 3);
+          this.createCoinsLine(1880, 320, 3);
+
+          // Step 4: Pijakan akhir menuju gerbang gapura panggung
+          this.createPlatform(2000, 390, 3);
+          this.createCoinsLine(2000, 330, 3);
+
+          // Enemies (ditempatkan di jalur bawah agar tidak memblokir lompatan pemain)
+          this.spawnEnemy(440, 440, 360, 500);
           this.spawnEnemy(760, 440, 700, 840);
-          this.spawnEnemy(1120, 440, 1040, 1200);
-          this.spawnEnemy(1540, 440, 1460, 1640);
-          this.spawnEnemy(1820, 440, 1740, 1920);
+          this.spawnEnemy(1060, 440, 980, 1140);
+          this.spawnEnemy(1500, 440, 1420, 1560);
+          this.spawnEnemy(1820, 440, 1750, 1870);
 
-          // Exit Gate
+          // Exit Gate berdiri kokoh di panggung finish yang aman
           this.exitGate = this.physics.add.staticSprite(2120, 428, 'stage_exit');
         }
       }
@@ -2071,24 +2099,46 @@
 
         const isGrounded = this.player.body.touching.down || this.player.body.blocked.down;
 
-        // Horizontal velocity
+        // Coyote Time: toleransi melompat sesaat setelah melangkah keluar dari tepi pijakan
+        if (isGrounded) {
+          this.coyoteTimer = 120; // 120ms coyote window
+        } else {
+          this.coyoteTimer = Math.max(0, this.coyoteTimer - delta);
+        }
+
+        // Jump Buffering: tangkap input lompat sedikit sebelum karakter mendarat di tanah
+        if (jumpPressed && !this.wasJumpDown) {
+          this.jumpBufferTimer = 160; // 160ms buffer window
+        } else {
+          this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta);
+        }
+        this.wasJumpDown = jumpPressed;
+
+        // Horizontal velocity yang lincah dan responsif
         if (moveLeft) {
-          this.player.setVelocityX(-185);
+          this.player.setVelocityX(-190);
           this.player.setFlipX(true);
         } else if (moveRight) {
-          this.player.setVelocityX(185);
+          this.player.setVelocityX(190);
           this.player.setFlipX(false);
         } else {
           this.player.setVelocityX(0);
         }
 
-        // Jump physics with coyote feel
-        if (jumpPressed && isGrounded) {
-          this.player.setVelocityY(-460);
+        // Jump physics: dorongan lompatan yang pas (-495) dengan respons instan
+        if (this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
+          this.player.setVelocityY(-495);
           this.player.setTexture('player_jump');
           soundSys.sfxJump();
+          this.jumpBufferTimer = 0;
+          this.coyoteTimer = 0;
         } else if (isGrounded) {
           this.player.setTexture('player_idle');
+        }
+
+        // Kontrol lompatan variabel: jika tombol dilepas lebih cepat saat meluncur naik, redam ketinggian
+        if (!jumpPressed && this.player.body.velocity.y < -160) {
+          this.player.setVelocityY(this.player.body.velocity.y * 0.92);
         }
 
         // Fall into orchestra pit / void
@@ -2110,8 +2160,8 @@
       onHitBlock(player, block) {
         if (block.isHit) return;
 
-        // Player hits block from underneath
-        const isUnderneath = player.y > block.y + 10;
+        // Player hits block from underneath or lower body collision
+        const isUnderneath = player.y > block.y + 4;
         const isMovingUp = player.body.velocity.y <= 0 || player.body.blocked.up || player.body.touching.up;
 
         if (isUnderneath && isMovingUp) {
@@ -3175,7 +3225,13 @@
     );
 
     bindTouchButton('vbtn-jump',
-      () => { const s = getGameScene(); if (s) s.inputJump = true; },
+      () => {
+        const s = getGameScene();
+        if (s) {
+          s.inputJump = true;
+          s.jumpBufferTimer = 160; // Instant jump response on mobile tap
+        }
+      },
       () => { const s = getGameScene(); if (s) s.inputJump = false; }
     );
 
